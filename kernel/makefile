@@ -10,18 +10,18 @@ SUBDIRS = $(wildcard */.)
 
 .PHONY: build
 build: folder $(SUBDIRS) $(OBJECTS)
-> $(GCC_PREFIX)ld $(LOCAL_BUILD)/*.o -r -o $(GLOBAL_BUILD)/kernel.o --oformat elf32-i386
+> $(LD) $(LOCAL_BUILD)/*.o -r -o $(GLOBAL_BUILD)/kernel.o --oformat elf32-i386
 
 .PHONY: folder
 folder:
-> @mkdir -p $(LOCAL_BUILD)
+> $(MKDIR) $(LOCAL_BUILD)
 
 .PHONY: $(SUBDIRS)
 $(SUBDIRS):
-> make -C $@ GLOBAL_BUILD=$(LOCAL_BUILD) build
+> $(MAKE) -C $@ GLOBAL_BUILD=$(LOCAL_BUILD) build
 
 $(LOCAL_BUILD)/%.s.o: %.s
-> $(GCC_PREFIX)as -o $@ $<
+> $(AS) -o $@ $<
 
 $(LOCAL_BUILD)/%.c.o: %.c $(wildcard *.h)
-> $(GCC_PREFIX)gcc -c -I$(INCLUDE_DIR) --prefix=$(GCC_PREFIX) $(GCC_OPTIONS) -o $@ $<
+> $(CC) -c -I$(INCLUDE_DIR) $(CCFLAGS) -o $@ $<

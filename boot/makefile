@@ -17,4 +17,4 @@ build: folder $(SUBDIRS)
 
 .PHONY: $(SUBDIRS)
 $(SUBDIRS):
-> make -C $@ GLOBAL_BUILD=$(LOCAL_BUILD) build
+> $(MAKE) -C $@ GLOBAL_BUILD=$(LOCAL_BUILD) build
