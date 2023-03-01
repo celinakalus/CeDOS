@@ -11,7 +11,7 @@ C_OBJECTS := $(patsubst %.c,$(LOCAL_BUILD)/%.c.o,$(C_SOURCES))
 S_OBJECTS := $(patsubst %.s,$(LOCAL_BUILD)/%.s.o,$(S_SOURCES))
 OBJECTS = $(S_OBJECTS) $(C_OBJECTS)
 
-DIRS := $(dir $(OBJECTS))
+DIRS := $(sort $(dir $(OBJECTS)))
 
 $(OBJECTS): | $(DIRS)
 $(DIRS):

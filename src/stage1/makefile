@@ -3,7 +3,7 @@
 LOCAL_BUILD = $(GLOBAL_BUILD)/stage1
 
 OBJECTS := $(GLOBAL_BUILD)/stage1.o
-DIRS := $(dir $(OBJECTS))
+DIRS := $(sort $(dir $(OBJECTS)))
 
 $(OBJECTS): | $(DIRS)
 $(DIRS):
