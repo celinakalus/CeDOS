@@ -10,11 +10,11 @@ SUBDIRS = $(wildcard */.)
 
 .PHONY: build
 build: folder $(SUBDIRS) $(OBJECTS)
-> $(GCC_PREFIX)ld -T link.txt $(wildcard $(LOCAL_BUILD)/*.o) -o $(GLOBAL_BUILD)/apps.o --oformat elf32-i386
+> $(GCC_PREFIX)ld -T link.txt -r $(wildcard $(LOCAL_BUILD)/*.o) -o $(GLOBAL_BUILD)/apps.o --oformat elf32-i386
 
 .PHONY: folder
 folder:
-> @mkdir $(LOCAL_BUILD) 2> /dev/null; true
+> @mkdir -p $(LOCAL_BUILD)
 
 .PHONY: $(SUBDIRS)
 $(SUBDIRS):

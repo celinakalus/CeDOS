@@ -14,7 +14,7 @@ build: folder $(SUBDIRS) $(OBJECTS)
 
 .PHONY: folder
 folder:
-> @mkdir $(LOCAL_BUILD) 2> /dev/null; true
+> @mkdir -p $(LOCAL_BUILD)
 
 .PHONY: $(SUBDIRS)
 $(SUBDIRS):

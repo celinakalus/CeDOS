@@ -2,7 +2,7 @@
 
 export CURRENT_DIR		= $(shell pwd)
 export INCLUDE_DIR		= $(CURRENT_DIR)/include
-export DEBUG_DIR		= $(CURRENT_DIR)/debug
+export LOG_DIR		= $(CURRENT_DIR)/log
 
 export GCC_PREFIX		= $(HOME)/opt/cross/bin/i686-elf-
 
@@ -17,21 +17,32 @@ endif
 
 export GCC_OPTIONS
 
+.PHONY: folder
+folder:
+> @mkdir -p $(LOCAL_BUILD)
 
 .PHONY: build
-build:
+build: boot kernel apps
 > @mkdir $(LOCAL_BUILD) 2> /dev/null; true
-> $(MAKE) GLOBAL_BUILD=$(LOCAL_BUILD) -C boot build
-> $(MAKE) GLOBAL_BUILD=$(LOCAL_BUILD) -C kernel build
-> $(MAKE) GLOBAL_BUILD=$(LOCAL_BUILD) -C apps build
-> $(GCC_PREFIX)ld $(LOCAL_BUILD)/*.o -T link.txt -Map=$(DEBUG_DIR)/mapfile.txt -o $(GLOBAL_BUILD)/base.o
-> $(GCC_PREFIX)objcopy --only-keep-debug $(GLOBAL_BUILD)/base.o $(DEBUG_DIR)/base.sym
+> $(GCC_PREFIX)ld $(LOCAL_BUILD)/*.o -T link.txt -Map=$(LOG_DIR)/mapfile.txt -o $(GLOBAL_BUILD)/base.o
+> $(GCC_PREFIX)objcopy --only-keep-debug $(GLOBAL_BUILD)/base.o $(LOG_DIR)/base.sym
 > $(GCC_PREFIX)objcopy -O binary $(GLOBAL_BUILD)/base.o $(GLOBAL_BUILD)/base.img
-> $(GCC_PREFIX)objdump -D $(GLOBAL_BUILD)/base.o > $(DEBUG_DIR)/objdump.txt
+> $(GCC_PREFIX)objdump -D $(GLOBAL_BUILD)/base.o > $(LOG_DIR)/objdump.txt
 
+.PHONY: boot
+boot:
+> $(MAKE) GLOBAL_BUILD=$(LOCAL_BUILD) -C boot build
 
-.PHONY: clear
-clear:
+.PHONY: kernel
+kernel:
+> $(MAKE) GLOBAL_BUILD=$(LOCAL_BUILD) -C kernel build
+
+.PHONY: apps
+apps:
+> $(MAKE) GLOBAL_BUILD=$(LOCAL_BUILD) -C apps build
+
+.PHONY: clean
+clean:
 > @rm -r $(CURRENT_DIR)/build/* 2> /dev/null; true
 
 .PHONY: run

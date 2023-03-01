@@ -8,8 +8,12 @@ LOCAL_BUILD = $(GLOBAL_BUILD)
 
 SUBDIRS = $(wildcard */.)
 
+.PHONY: folder
+folder:
+> @mkdir -p $(LOCAL_BUILD)
+
 .PHONY: build
-build: $(SUBDIRS)
+build: folder $(SUBDIRS)
 
 .PHONY: $(SUBDIRS)
 $(SUBDIRS):
