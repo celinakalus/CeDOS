@@ -46,8 +46,8 @@ typedef struct {
 } CON_DRIVER;
 
 //! VGA console driver (default driver)
-CON_DRIVER vga_con;
+extern CON_DRIVER vga_con;
 
-CON_DRIVER *std_con;
+extern CON_DRIVER *std_con;
 
 #endif

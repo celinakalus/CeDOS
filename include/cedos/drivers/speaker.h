@@ -32,6 +32,6 @@ typedef struct {
 } SPEAKER_DRIVER;
 
 //! Driver for the bios speaker.
-SPEAKER_DRIVER bios_sp;
+extern SPEAKER_DRIVER bios_sp;
 
 #endif

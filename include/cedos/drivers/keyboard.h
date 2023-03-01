@@ -29,8 +29,8 @@ typedef struct {
 } KB_DRIVER;
 
 //! PS/2 keyboard driver (default driver)
-KB_DRIVER ps2_kb;
+extern KB_DRIVER ps2_kb;
 
-KB_DRIVER *std_kb;
+extern KB_DRIVER *std_kb;
 
 #endif
