@@ -1,11 +1,11 @@
 .RECIPEPREFIX = >
 
-LOCAL_BUILD := $(GLOBAL_BUILD)/kernel
+LOCAL_BUILD := $(GLOBAL_BUILD)/stage2
 
 SRC_DIR := $(shell pwd)
 
-C_SOURCES := $(wildcard *.c) $(wildcard **/*.c)
-S_SOURCES := $(wildcard *.s) $(wildcard **/*.s)
+C_SOURCES := $(wildcard *.c)
+S_SOURCES := $(wildcard *.s)
 
 C_OBJECTS := $(patsubst %.c,$(LOCAL_BUILD)/%.c.o,$(C_SOURCES))
 S_OBJECTS := $(patsubst %.s,$(LOCAL_BUILD)/%.s.o,$(S_SOURCES))
@@ -18,16 +18,12 @@ $(DIRS):
 > $(MKDIR) $(DIRS)
 
 .PHONY: build
-build: folder 
-$(GLOBAL_BUILD)/kernel.o: $(OBJECTS) | folder
-> $(LD) $^ -r -o $@ --oformat elf32-i386
-
-.PHONY: folder
-folder:
-> $(MKDIR) $(LOCAL_BUILD)
+build: $(GLOBAL_BUILD)/stage2.o
+$(GLOBAL_BUILD)/stage2.o: $(OBJECTS)
+> $(LD) $^ -r -T link.txt -o $@ --oformat elf32-i386
 
 $(LOCAL_BUILD)/%.s.o: %.s
 > $(AS) -o $@ $<
 
 $(LOCAL_BUILD)/%.c.o: %.c $(wildcard *.h)
-> $(CC) -c -I$(INCLUDE_DIR) $(CCFLAGS) -o $@ $<
+> $(CC) -c $(CCFLAGS) -o $@ $<

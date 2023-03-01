@@ -133,7 +133,7 @@ void sched_interrupt_c(SCHED_FRAME * volatile frame, uint32_t volatile ebp) {
 }
 
 void idle(void) {
-    while (1) { printk("."); hlt(); }
+    while (1) { printk("idle.\n"); hlt(); }
 }
 
 extern void* sched_interrupt;

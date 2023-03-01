@@ -1,24 +1,27 @@
 .RECIPEPREFIX = >
 
-S_OBJECTS = $(patsubst %.s,$(LOCAL_BUILD)/%.s.o,$(wildcard *.s))
-C_OBJECTS = $(patsubst %.c,$(LOCAL_BUILD)/%.c.o,$(wildcard *.c))
-OBJECTS = $(S_OBJECTS) $(C_OBJECTS)
-
 LOCAL_BUILD = $(GLOBAL_BUILD)/apps
 
-SUBDIRS = $(wildcard */.)
+SRC_DIR := $(shell pwd)
+
+C_SOURCES := $(wildcard *.c) $(wildcard **/*.c)
+S_SOURCES := $(wildcard *.s) $(wildcard **/*.s)
+
+C_OBJECTS := $(patsubst %.c,$(LOCAL_BUILD)/%.c.o,$(C_SOURCES))
+S_OBJECTS := $(patsubst %.s,$(LOCAL_BUILD)/%.s.o,$(S_SOURCES))
+OBJECTS = $(S_OBJECTS) $(C_OBJECTS)
+
+DIRS := $(dir $(OBJECTS))
+
+$(OBJECTS): | $(DIRS)
+$(DIRS):
+> $(MKDIR) $(DIRS)
 
 .PHONY: build
-build: folder $(SUBDIRS) $(OBJECTS)
-> $(LD) -T link.txt -r $(wildcard $(LOCAL_BUILD)/*.o) -o $(GLOBAL_BUILD)/apps.o --oformat elf32-i386
+build: folder $(SUBDIRS) $(GLOBAL_BUILD)/apps.o
+$(GLOBAL_BUILD)/apps.o: $(OBJECTS)
+> $(LD) -T link.txt -r $^ -o $@ --oformat elf32-i386
 
-.PHONY: folder
-folder:
-> $(MKDIR) $(LOCAL_BUILD)
-
-.PHONY: $(SUBDIRS)
-$(SUBDIRS):
-> $(MAKE) -C $@ GLOBAL_BUILD=$(LOCAL_BUILD) build
 
 $(LOCAL_BUILD)/%.s.o: %.s
 > $(AS) -o $@ $<

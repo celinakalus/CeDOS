@@ -142,6 +142,6 @@ int os_main(void) {
     //kpanic("SIMULATED KERNEL PANIC");
 
     // won't be executed
-    //printk("Main procedure terminating.\n");
+    printk("Main procedure terminating.\n");
     return 0;
 }

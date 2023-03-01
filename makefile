@@ -18,6 +18,7 @@ export OBJDUMP 	:= $(CROSS_COMP)objdump
 #export MAKE 		:= make -R
 
 export MKDIR 		:= mkdir -p
+export RM			:= rm
 
 GLOBAL_BUILD		:= $(CURRENT_DIR)/build
 
@@ -49,44 +50,54 @@ LOCAL_BUILD 		:= $(GLOBAL_BUILD)/components
 export CCFLAGS
 export GLOBAL_BUILD
 
-.PHONY: folder
-folder:
-> $(MKDIR) $(LOCAL_BUILD)
+OBJECTS := $(LOCAL_BUILD)/stage1.o $(LOCAL_BUILD)/stage2.o $(LOCAL_BUILD)/kernel.o $(LOCAL_BUILD)/apps.o
+DIRS := $(dir $(OBJECTS))
+
+$(OBJECTS): | $(DIRS)
+$(DIRS):
+> $(MKDIR) $(DIRS)
 
 .PHONY: build
-build: $(GLOBAL_BUILD)/base.img
+build: $(GLOBAL_BUILD)/base.img $(GLOBAL_BUILD)/base.o
 
-$(GLOBAL_BUILD)/base.o: boot kernel apps
-> $(LD) 		$(LOCAL_BUILD)/*.o -T link.txt -Map=$(LOG_DIR)/mapfile.txt -o $(GLOBAL_BUILD)/base.o
+$(GLOBAL_BUILD)/base.o: $(OBJECTS)
+> $(LD) 		$^ -r -T link.txt -Map=$(LOG_DIR)/mapfile.txt --oformat elf32-i386 -o $@
 
-$(GLOBAL_BUILD)/base.img: $(GLOBAL_BUILD)/base.o
-> $(OBJCOPY) 	-O binary $(GLOBAL_BUILD)/base.o $(GLOBAL_BUILD)/base.img
+$(GLOBAL_BUILD)/base.img: $(OBJECTS)
+> $(LD) 		$^ -T link.txt -Map=$(LOG_DIR)/mapfile.txt --oformat binary --nostdlib  -o $@
 
 .PHONY: logs
 logs: $(LOG_DIR)/base.sym $(LOG_DIR)/objdump.txt
 
 $(LOG_DIR)/base.sym: $(GLOBAL_BUILD)/base.o
-> $(OBJCOPY) 	--only-keep-debug $(GLOBAL_BUILD)/base.o $(LOG_DIR)/base.sym
+> $(OBJCOPY) 	--only-keep-debug $< $@
 
 $(LOG_DIR)/objdump.txt: $(GLOBAL_BUILD)/base.o
-> $(OBJDUMP) 	-D $(GLOBAL_BUILD)/base.o > $(LOG_DIR)/objdump.txt
+> $(OBJDUMP) 	-D $< > $@
 
-.PHONY: boot
-boot:
-> echo $(AS)
-> $(MAKE) GLOBAL_BUILD=$(LOCAL_BUILD) -C boot build
+.PHONY: stage1
+stage1:
+$(LOCAL_BUILD)/stage1.o:
+> $(MAKE) GLOBAL_BUILD=$(LOCAL_BUILD) -C stage1 $@
+.PHONY: stage2
+
+stage2:
+$(LOCAL_BUILD)/stage2.o:
+> $(MAKE) GLOBAL_BUILD=$(LOCAL_BUILD) -C stage2 $@
 
 .PHONY: kernel
 kernel:
-> $(MAKE) GLOBAL_BUILD=$(LOCAL_BUILD) -C kernel build
+$(LOCAL_BUILD)/kernel.o:
+> $(MAKE) GLOBAL_BUILD=$(LOCAL_BUILD) -C kernel $@
 
 .PHONY: apps
 apps:
-> $(MAKE) GLOBAL_BUILD=$(LOCAL_BUILD) -C apps build
+$(LOCAL_BUILD)/apps.o:
+> $(MAKE) GLOBAL_BUILD=$(LOCAL_BUILD) -C apps $@
 
 .PHONY: clean
 clean:
-> @rm -r $(CURRENT_DIR)/build/* 2> /dev/null; true
+> $(RM) -r $(CURRENT_DIR)/build/* 2> /dev/null; true
 
 .PHONY: run
 run:
