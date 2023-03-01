@@ -1,4 +1,0 @@
-.RECIPEPREFIX = >
-.PHONY: build
-build:
-> 
