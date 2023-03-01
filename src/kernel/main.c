@@ -134,7 +134,12 @@ int os_main(void) {
 
     // create test tasks
     printk("Creating tasks.\n");
-    sched_exec(SS_VMA + (APP_LMA - SS_LMA), APP_SIZE, APP_VMA, "sysinit");
+    
+    PROCESS_ID sysinit;
+    sysinit = sched_create("sysinit");
+    sched_copyto(sysinit, SS_VMA + (APP_LMA - SS_LMA), APP_SIZE, (VIRT_ADDR)0x10000000);
+    sched_exec(sysinit, APP_VMA);
+    //sched_exec(SS_VMA + (APP_LMA - SS_LMA), APP_SIZE, APP_VMA, "sysinit");
 
     printk("Starting scheduler.\n");
     sched_start();

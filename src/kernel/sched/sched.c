@@ -33,10 +33,91 @@ PROCESS_ID get_current_process(void) {
 
 int sched_dispatcher(void);
 
+
+/*!
+ * Creates a new process and returns its process ID.
+ */
+PROCESS_ID sched_create(const char *name) {
+    crit_enter();
+
+    PHYS_ADDR page_dir = create_empty_page_dir();
+
+    // set process context
+    PROCESS *p = get_slot();
+    p->name = name;
+    p->page_dir = page_dir;
+    p->eip = sched_dispatcher;
+    p->ebp = USER_STACK;
+    p->esp = USER_STACK - sizeof(SCHED_FRAME);
+    p->eflags = PROCESS_STD_EFLAGS;
+    p->entry = 0xDEADBEEF;
+    p->state = PSTATE_CREATED;
+
+    PROCESS_ID pid = add_process(p, current_pid);
+
+    return pid;
+}
+
+
+/*!
+ * Copies a piece of memory into the memory space of some process.
+ */
+int sched_copyto(PROCESS_ID pid, VIRT_ADDR src, uint32_t length, VIRT_ADDR dest) {
+    crit_enter();
+    
+    PROCESS* p = get_process(pid);
+    PHYS_ADDR page_dir = p->page_dir;
+
+    copy_to_pdir(src, length, page_dir, dest);
+
+    crit_exit();
+
+    return 0;
+}
+
+
+/*!
+ * Executes the (already created) task with the given process ID.
+ */
+int sched_exec(PROCESS_ID pid, PROCESS_MAIN *entry) {
+    crit_enter();
+
+    PROCESS* p = get_process(pid);
+
+    if (p->state != PSTATE_CREATED) {
+        kpanic("Process executed multiple times after creation!");
+        return -1;
+    }
+
+    // setup stack
+    static SCHED_FRAME frame;
+    frame.eax = frame.ebx = frame.ecx = frame.edx = 0;
+    frame.esi = frame.edi = 0;
+    frame.ebp = p->ebp;
+    frame.esp = p->esp;
+    frame.eflags = p->eflags;
+    frame.eip = sched_dispatcher;
+    frame.cs = 0x8;
+
+    // load stack
+    copy_to_pdir(&frame, sizeof(frame), p->page_dir, p->esp);
+
+    // save stack checksum
+    stack_compute_checksum(&(p->checksum), &frame, &(&frame)[1]);
+
+    /* TODO: check if code exists at entry point */
+
+    // start the process
+    p->entry = entry;
+    p->state = PSTATE_READY;
+
+    crit_exit();
+}
+
 /*!
  * Executes a task.
  */
-PROCESS_ID sched_exec(VIRT_ADDR code, uint32_t code_len, PROCESS_MAIN *entry, const char *name) {
+PROCESS_ID sched_exec_legacy(VIRT_ADDR code, uint32_t code_len, PROCESS_MAIN *entry, const char *name) {
     crit_enter();
 
     PHYS_ADDR page_dir = create_empty_page_dir();
@@ -132,7 +213,7 @@ void sched_interrupt_c(SCHED_FRAME * volatile frame, uint32_t volatile ebp) {
     pic1_eoi();
 }
 
-void idle(void) {
+void entry_idle(void) {
     while (1) { printk("idle.\n"); hlt(); }
 }
 
@@ -145,7 +226,8 @@ int sched_init(void) {
     current_pid = 0;
 
     // create idle process
-    sched_exec(0, 0, idle, "idle");
+    PROCESS_ID idle = sched_create("idle");
+    sched_exec(idle, entry_idle);
 
     return 1;
 }

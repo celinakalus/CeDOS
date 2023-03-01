@@ -30,9 +30,19 @@ typedef struct {
 }__attribute__((packed)) SCHED_FRAME;
 
 /*!
- * Executes a task.
+ * Creates a new process and returns its process ID.
  */
-PROCESS_ID sched_exec(VIRT_ADDR code, uint32_t code_len, PROCESS_MAIN *entry, const char *name);
+PROCESS_ID sched_create(const char *name);
+
+/*!
+ * Copies a piece of memory into the memory space of some process.
+ */
+int sched_copyto(PROCESS_ID pid, VIRT_ADDR src, uint32_t length, VIRT_ADDR dest);
+
+/*!
+ * Executes the (already created) task with the given process ID.
+ */
+int sched_exec(PROCESS_ID pid, PROCESS_MAIN *entry);
 
 /*!
  * Return the ID of the current process.
