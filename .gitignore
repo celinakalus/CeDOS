@@ -1,8 +1,8 @@
 build/*
-debug/*
+log/*
 docs/*
 *.img
 *.o
 *.bin
 
-mapfile.txt
+.vscode
