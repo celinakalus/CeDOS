@@ -18,6 +18,10 @@ extern uint8_t __APP_VMA;
 extern uint8_t __APP_LMA;
 extern uint8_t __APP_SIZE;
 
+extern uint8_t __ELF_VMA;
+extern uint8_t __ELF_LMA;
+extern uint8_t __ELF_SIZE;
+
 #define SS_VMA (&__SS_VMA)
 #define SS_LMA (&__SS_LMA)
 #define SS_SIZE (uint32_t)(&__SS_SIZE)
@@ -29,5 +33,9 @@ extern uint8_t __APP_SIZE;
 #define APP_VMA (&__APP_VMA)
 #define APP_LMA (&__APP_LMA)
 #define APP_SIZE (uint32_t)(&__APP_SIZE)
+
+#define ELF_VMA (&__ELF_VMA)
+#define ELF_LMA (&__ELF_LMA)
+#define ELF_SIZE (uint32_t)(&__ELF_SIZE)
 
 #endif

@@ -114,50 +114,6 @@ int sched_exec(PROCESS_ID pid, PROCESS_MAIN *entry) {
     crit_exit();
 }
 
-/*!
- * Executes a task.
- */
-PROCESS_ID sched_exec_legacy(VIRT_ADDR code, uint32_t code_len, PROCESS_MAIN *entry, const char *name) {
-    crit_enter();
-
-    PHYS_ADDR page_dir = create_empty_page_dir();
-
-    // copy app code
-    copy_to_pdir(code, code_len, page_dir, (VIRT_ADDR)0x10000000);
-
-    // set process context
-    PROCESS *p = get_slot();
-    p->name = name;
-    p->page_dir = page_dir;
-    p->eip = sched_dispatcher;
-    p->ebp = USER_STACK;
-    p->esp = USER_STACK - sizeof(SCHED_FRAME);
-    p->eflags = PROCESS_STD_EFLAGS;
-    p->entry = entry;
-    p->state = PSTATE_READY;
-
-    // setup stack
-    static SCHED_FRAME frame;
-    frame.eax = frame.ebx = frame.ecx = frame.edx = 0;
-    frame.esi = frame.edi = 0;
-    frame.ebp = p->ebp;
-    frame.esp = p->esp;
-    frame.eflags = p->eflags;
-    frame.eip = sched_dispatcher;
-    frame.cs = 0x8;
-
-    // load stack
-    copy_to_pdir(&frame, sizeof(frame), p->page_dir, p->esp);
-
-    // save stack checksum
-    stack_compute_checksum(&(p->checksum), &frame, &(&frame)[1]);
-
-    PROCESS_ID pid = add_process(p, current_pid);
-    //printk("Executing task %i...\n", pid);
-
-    crit_exit();
-    return pid;
-}
 
 void sched_interrupt_c(SCHED_FRAME * volatile frame, uint32_t volatile ebp) {
     //kpanic("SCHEDULER STACK INFO");

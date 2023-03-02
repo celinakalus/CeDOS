@@ -52,7 +52,7 @@ export CCFLAGS
 export GLOBAL_BUILD
 
 MODULES := stage1 stage2 kernel apps
-OBJECTS := $(patsubst %,$(LOCAL_BUILD)/%.o,$(MODULES))
+OBJECTS := $(patsubst %,$(LOCAL_BUILD)/%.o,$(MODULES)) $(LOCAL_BUILD)/apps_raw.o
 DIRS := $(LOCAL_BUILD)
 
 $(MODULES): | $(DIRS)
@@ -63,10 +63,10 @@ $(DIRS):
 build: $(GLOBAL_BUILD)/base.img $(GLOBAL_BUILD)/base.o
 
 $(GLOBAL_BUILD)/base.o: $(MODULES)
-> $(LD) 		$(OBJECTS) -r -T link.txt -Map=$(LOG_DIR)/mapfile.txt --oformat elf32-i386 -o $@
+> $(LD) 		$(OBJECTS) -r -T link.txt -Map=$(LOG_DIR)/elf_mapfile.txt --oformat elf32-i386 -o $@
 
 $(GLOBAL_BUILD)/base.img: $(MODULES)
-> $(LD) 		$(OBJECTS) -T link.txt -Map=$(LOG_DIR)/mapfile.txt --oformat binary --nostdlib  -o $@
+> $(LD) 		$(OBJECTS) -T link.txt -Map=$(LOG_DIR)/bin_mapfile.txt --oformat binary --nostdlib  -o $@
 
 .PHONY: logs
 logs: $(LOG_DIR)/base.sym $(LOG_DIR)/objdump.txt

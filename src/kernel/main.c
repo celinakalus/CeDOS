@@ -12,6 +12,8 @@
 #include "cedos/pit.h"
 #include "cedos/core.h"
 
+#include "cedos/elf.h"
+
 #include "linker.h"
 #include "assert.h"
 
@@ -135,12 +137,9 @@ int os_main(void) {
     // create test tasks
     printk("Creating tasks.\n");
     
-    PROCESS_ID sysinit;
-    sysinit = sched_create("sysinit");
-    sched_copyto(sysinit, SS_VMA + (APP_LMA - SS_LMA), APP_SIZE, (VIRT_ADDR)0x10000000);
-    sched_exec(sysinit, APP_VMA);
-    //sched_exec(SS_VMA + (APP_LMA - SS_LMA), APP_SIZE, APP_VMA, "sysinit");
-
+    printk("Loading ELF executable.\n");
+    elf_exec(SS_VMA + (ELF_LMA - SS_LMA), ELF_SIZE, "my_apps");
+ 
     printk("Starting scheduler.\n");
     sched_start();
 

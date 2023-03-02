@@ -25,16 +25,16 @@ typedef uint32_t PAGE_TABLE_ENTRY;
 
 /*!
  * Sets cr3 to new page directory and returns the old one.
- * \param page_dir Address of new page directory that is supposed to be used.
+ * \param pd_new Address of new page directory that is supposed to be used.
  * \return Address of old page directory.
  */
-__attribute__((always_inline)) inline PHYS_ADDR switch_page_dir(PHYS_ADDR page_dir) {
-    uint32_t res;
+__attribute__((always_inline)) inline PHYS_ADDR switch_page_dir(PHYS_ADDR pd_new) {
+    uint32_t pd_old;
     __asm__ volatile (  "mov %%cr3, %0\n"
                         "mov %1, %%cr3" : 
-                        "=a" (res) :
-                        "Nd" (page_dir));
-    return (void*)res;
+                        "=a" (pd_old) :
+                        "Nd" (pd_new));
+    return (void*)pd_old;
 }
 
 /*!
