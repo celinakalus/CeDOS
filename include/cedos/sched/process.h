@@ -64,6 +64,13 @@ typedef struct __PROCESS {
     //! String of arguments for the process
     char *args;
 
+    /*
+     * String buffers for name and args
+     * TODO: eventually move to a malloc solution
+     */
+    char name_buf[16];
+    char args_buf[128];
+
     //! Current state of the process.
     PROCESS_STATE state;
 

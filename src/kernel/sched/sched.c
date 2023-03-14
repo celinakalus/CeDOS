@@ -44,9 +44,6 @@ PROCESS_ID sched_create(const char *name, char *args) {
 
     // set process context
     PROCESS *p = get_slot();
-    p->name = name;
-    p->args = args;
-    // TODO: copy name and args instead of linking!
     p->page_dir = page_dir;
     p->eip = sched_dispatcher;
     p->ebp = USER_STACK;
@@ -54,6 +51,13 @@ PROCESS_ID sched_create(const char *name, char *args) {
     p->eflags = PROCESS_STD_EFLAGS;
     p->entry = 0xDEADBEEF;
     p->state = PSTATE_CREATED;
+    
+    // TODO: implement with malloc
+    strcpy(p->name_buf, name);
+    strcpy(p->args_buf, args);
+
+    p->name = &(p->name_buf);
+    p->args = &(p->args_buf);
 
     PROCESS_ID pid = add_process(p, current_pid);
 

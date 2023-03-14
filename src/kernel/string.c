@@ -14,6 +14,15 @@ void *memcpy (void *destination, const void *source, size_t num) {
     return destination;
 }
 
+char *strcpy(char *destination, const char *source) {
+    int i = 0;
+    while (source[i]) {
+        destination[i] = source[i];
+        i++;
+    }
+    return destination;
+}
+
 void *memset (void *ptr, int value, size_t num) {
     for (uint32_t i = 0; i < num; i++) {
         ((uint8_t*)ptr)[i] = (uint8_t)value;
