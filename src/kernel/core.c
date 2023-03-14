@@ -7,45 +7,45 @@ CON_DRIVER *core_con;
 char numeric[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 char hex[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
-void print_hex_char(uint8_t c) {
+void printk_hex_char(uint8_t c) {
     core_con->write_c(hex[c >> 4]);
     core_con->write_c(hex[c & 0x0F]);
 }
 
-void print_uint32(uint32_t value) {
+void printk_uint32(uint32_t value) {
     uint8_t* mem = (uint8_t*)(&value);
     for (int i = 0; i < 4; i++) {
-        print_hex_char(mem[3-i]);
+        printk_hex_char(mem[3-i]);
     }
 }
 
-void rek_print_uint(unsigned int value) {
+void rek_printk_uint(unsigned int value) {
     if (value > 0) {
-        rek_print_uint(value / 10);
+        rek_printk_uint(value / 10);
         core_con->write_c(numeric[value % 10]);
     }
 }
 
-void print_uint(unsigned int value) {
+void printk_uint(unsigned int value) {
     if (value == 0) {
         core_con->write_c('0');
         return;
     }
 
-    rek_print_uint(value);
+    rek_printk_uint(value);
 }
 
-void print_int(int value) {
+void printk_int(int value) {
     if (value < 0) {
         core_con->write_c('-');
-        print_int(-value);
+        printk_int(-value);
         return;
     } else if (value == 0) {
         core_con->write_c('0');
         return;
     }
 
-    rek_print_uint((unsigned int)value);
+    rek_printk_uint((unsigned int)value);
 }
 
 void memdump(void* start, uint32_t size) {
@@ -58,14 +58,14 @@ void memdump(void* start, uint32_t size) {
 
     for (uint32_t i = first_line; i < last_line; i += 0x10) {
         core_con->write_c(' ');
-        print_uint32(i);
+        printk_uint32(i);
         core_con->write_c(' ');
 
         for (int j = 0; j < 0x10; j++) {
             uint8_t* p = (uint8_t*)(i | j);
             
             if (p >= start && p < (start + size)) {
-                print_hex_char(*p);
+                printk_hex_char(*p);
                 core_con->write_c(' ');
             } else {
                 core_con->write_c(' ');
@@ -123,16 +123,16 @@ void printk(const char* fmt, ...) {
 
     while (*fmt) {
         if (state == STATE_ARGUMENT && *fmt == 'X') {
-            print_uint32(va_arg(args, uint32_t));
+            printk_uint32(va_arg(args, uint32_t));
             state = STATE_DEFAULT;
         } else if (state == STATE_ARGUMENT && *fmt == 'i') {
-            print_int(va_arg(args, int));
+            printk_int(va_arg(args, int));
             state = STATE_DEFAULT;
         } else if (state == STATE_ARGUMENT && *fmt == 'u') {
-            print_uint(va_arg(args, unsigned int));
+            printk_uint(va_arg(args, unsigned int));
             state = STATE_DEFAULT;
         } else if (state == STATE_ARGUMENT && *fmt == 'p') {
-            print_uint32(va_arg(args, uint32_t));
+            printk_uint32(va_arg(args, uint32_t));
             state = STATE_DEFAULT;
         } else if (state == STATE_ARGUMENT && *fmt == 's') {
             const char* string = va_arg(args, const char*);

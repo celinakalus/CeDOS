@@ -32,7 +32,7 @@ int ps2_kb_init(void);
  * Reads a single character from the PS/2 keyboard
  * \return A single char corresponding to a key press.
  */
-uint32_t ps2_kb_read(void);
+uint8_t ps2_kb_read(void);
 
 //! PS/2 keyboard driver (default driver)
 KB_DRIVER ps2_kb = {
@@ -96,7 +96,7 @@ int ps2_kb_init(void) {
     return 1;
 }
 
-uint32_t ps2_kb_read(void) {
+uint8_t ps2_kb_read(void) {
     while (buffer_empty()) {
         sched_yield();
     }

@@ -3,8 +3,13 @@
 
 #include "assembly.h"
 
+#include <stdint.h>
+
 int sysprint(const char *fmt, int arg1, int arg2);
 int yield();
 int get_pid();
+
+int sc_file_read(int fd, char *buffer, uint32_t size);
+int sc_file_write(int fd, char *buffer, uint32_t size);
 
 #endif

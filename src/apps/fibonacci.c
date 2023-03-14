@@ -8,8 +8,10 @@ void fib(void) {
         uint32_t tmp = a + b;
         a = b;
         b = tmp;
-        sysprint("fib (%i) = %i\n", i, a);
+        printf("fib (%i) = %i\n", i, a);
         i++;
-        hlt();//yield();
+        char c = 0;
+        sc_file_read(0, &c, 1);
+        printf("[%c]\n", (int)(uint32_t)c);//yield();
     }
 }

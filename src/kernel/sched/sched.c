@@ -170,7 +170,9 @@ void sched_interrupt_c(SCHED_FRAME * volatile frame, uint32_t volatile ebp) {
 }
 
 void entry_idle(void) {
-    while (1) { printk("idle.\n"); hlt(); }
+    while (1) { 
+        //printk("idle.\n"); 
+    }
 }
 
 extern void* sched_interrupt;
@@ -190,9 +192,11 @@ int sched_init(void) {
 
 void sched_yield(void) {
     crit_enter();
+    //printk("yield.\n");
     PROCESS *current = get_process(current_pid);
     if (current != NULL && current->state != PSTATE_TERMINATED) {
-        current->state = PSTATE_BLOCKED;
+        current->state = PSTATE_READY;
+        //current->state = PSTATE_RUNNING;
     }
 
     uint32_t csc = crit_stash();
