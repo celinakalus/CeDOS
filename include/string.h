@@ -32,4 +32,7 @@ void *memcpy (void *destination, const void *source, size_t num);
  */
 void *memset (void *ptr, int value, size_t num);
 
+unsigned int strlen (const char *str);
+char *strcpy(char *destination, const char *source);
+
 #endif

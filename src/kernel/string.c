@@ -29,3 +29,9 @@ void *memset (void *ptr, int value, size_t num) {
     }
     return ptr;
 }
+
+unsigned int strlen (const char *str) {
+    int i = 0;
+    while (str[i]) { i++; }
+    return i;
+}
