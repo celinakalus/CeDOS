@@ -32,7 +32,7 @@ typedef struct {
 /*!
  * Creates a new process and returns its process ID.
  */
-PROCESS_ID sched_create(const char *name);
+PROCESS_ID sched_create(const char *name, char *args);
 
 /*!
  * Copies a piece of memory into the memory space of some process.

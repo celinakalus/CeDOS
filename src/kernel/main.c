@@ -138,7 +138,9 @@ int os_main(void) {
     printk("Creating tasks.\n");
     
     printk("Loading ELF executable.\n");
-    elf_exec(SS_VMA + (ELF_LMA - SS_LMA), ELF_SIZE, "my_apps");
+    elf_exec(SS_VMA + (ELF_LMA - SS_LMA), ELF_SIZE, "app1", "Hello World!");
+    elf_exec(SS_VMA + (ELF_LMA - SS_LMA), ELF_SIZE, "app2", "Hello World!");
+    elf_exec(SS_VMA + (ELF_LMA - SS_LMA), ELF_SIZE, "app3", "Hello World!");
  
     printk("Starting scheduler.\n");
     sched_start();

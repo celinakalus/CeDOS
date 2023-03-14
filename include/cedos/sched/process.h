@@ -31,7 +31,7 @@ typedef uint32_t PROCESS_PRIO;
 /*!
  * Defines the prototype for process entry functions.
  */
-typedef int PROCESS_MAIN(void);
+typedef int PROCESS_MAIN(char *args);
 
 /*!
  * Struct that saves context information for a process.
@@ -60,6 +60,9 @@ typedef struct __PROCESS {
 
     //! Name of the process.
     const char *name;
+
+    //! String of arguments for the process
+    char *args;
 
     //! Current state of the process.
     PROCESS_STATE state;

@@ -115,9 +115,9 @@ void elf_infodump(VIRT_ADDR elf_pointer, uint32_t size) {
     }
 }
 
-PROCESS_ID elf_exec(VIRT_ADDR elf_pointer, uint32_t size, char *name) {
+PROCESS_ID elf_exec(VIRT_ADDR elf_pointer, uint32_t size, char *name, char *args) {
     printk("Creating process %s...", name);
-    PROCESS_ID pid = sched_create(name);
+    PROCESS_ID pid = sched_create(name, args);
     printk("done, PID: %i.\n", pid);
 
     ELF_HEADER *header = (ELF_HEADER*)elf_pointer;

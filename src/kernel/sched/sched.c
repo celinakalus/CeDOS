@@ -37,7 +37,7 @@ int sched_dispatcher(void);
 /*!
  * Creates a new process and returns its process ID.
  */
-PROCESS_ID sched_create(const char *name) {
+PROCESS_ID sched_create(const char *name, char *args) {
     crit_enter();
 
     PHYS_ADDR page_dir = create_empty_page_dir();
@@ -45,6 +45,8 @@ PROCESS_ID sched_create(const char *name) {
     // set process context
     PROCESS *p = get_slot();
     p->name = name;
+    p->args = args;
+    // TODO: copy name and args instead of linking!
     p->page_dir = page_dir;
     p->eip = sched_dispatcher;
     p->ebp = USER_STACK;
@@ -169,7 +171,7 @@ void sched_interrupt_c(SCHED_FRAME * volatile frame, uint32_t volatile ebp) {
     pic1_eoi();
 }
 
-void entry_idle(void) {
+void entry_idle(char *args) {
     while (1) { 
         //printk("idle.\n"); 
     }
@@ -184,7 +186,7 @@ int sched_init(void) {
     current_pid = 0;
 
     // create idle process
-    PROCESS_ID idle = sched_create("idle");
+    PROCESS_ID idle = sched_create("idle", NULL);
     sched_exec(idle, entry_idle);
 
     return 1;
@@ -257,7 +259,7 @@ int sched_dispatcher(void) {
     PROCESS_MAIN* entry = this->entry;
 
     // enter the actual program
-    entry();
+    entry(this->args);
 
     //printk("Process %i terminated.\n", current_pid);
 
