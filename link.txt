@@ -17,7 +17,7 @@ SECTIONS
     */boot.o(.*)
   } >BOOT_VMA
 
-  KERNEL : AT(LOADADDR(BOOT) + SIZEOF(BOOT))
+  KERNEL : AT(0x1000)
   {
     */kernel.o(.*)
     */kernel.o(.bss)
@@ -47,7 +47,7 @@ __KERNEL_LMA = LOADADDR(KERNEL);
 __KERNEL_VMA = ADDR(KERNEL);
 __KERNEL_SIZE = SIZEOF(KERNEL);
 
-ASSERT(__KERNEL_LMA == __SS_LMA + __SS_SIZE, "LMA incorrect!");
+
 
 __APP_LMA = LOADADDR(APPLICATION);
 __APP_VMA = ADDR(APPLICATION);

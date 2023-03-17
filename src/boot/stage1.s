@@ -24,6 +24,9 @@ start:
   movb $0x05, %ah
   int $0x10
 
+  mov $load_bl_msg, %si
+  call print
+
   # load rest of bootloader
   movw $0x0000, %bx   # buffer address
   movw $0x07e0, %ax
@@ -37,34 +40,86 @@ start:
   # dl (drive) keep as is
   int $0x13
   pop %cx
-  jnc bl_loaded
-  loop load
   jc error
 
 bl_loaded:
   mov $done_msg, %si
-  jmp print
-
-debug:
-  jmp debug
+  call print
 
   # check if A20 gate is enabled
-  mov $a20_msg, %si
+  mov $a20_check_msg, %si
   call print
   call checkA20
-  je disabled
+  je enabled
+
+  # A20 is disabled, we need to enable it
+  mov $disabled_msg, %si
+  call print
+
+  mov $a20_enable_msg, %si
+  call print
+
+  # A20 BIOS method
+a20_bios:
+  mov $a20_enable_bios_msg, %si
+  call print
+
+  movw $0x2401, %ax
+  int $0x15
+
+  mov $0x0001, %cx
+  call delay
+
+  call checkA20
+  je enabled
+
+  mov $fail_msg, %si
+  call print
+
+  # A20 keyboard controller method
+a20_keyboard:
+  mov $a20_enable_kb_msg, %si
+  call print
+
+  # TODO: implement
+
+  mov $0x0001, %cx
+  call delay
+
+  call checkA20
+  je enabled
+
+  mov $fail_msg, %si
+  call print
+
+  # fast A20 method
+a20_fasta20:
+  mov $a20_enable_fasta20_msg, %si
+  call print
+
+  inb $0x92, %al
+  orb $0x02, %al
+  andb $0xFE, %al
+  outb %al, $0x92
+
+  mov $0x1000, %cx
+  call delay
+
+  call checkA20
+  je enabled
+
+  mov $fail_msg, %si
+  call print
+
+  mov $a20_fail, %si
+  call print
+
+  jmp error_loop
+
+
 enabled:
-  call print_done
-  jmp error_loop # debug
-  jmp resume
-disabled:
-  call print_fail
-  jmp disabled
-resume:
-
-
-  # TODO:
-  #  - activate A20 gate
+  mov $enabled_msg, %si
+  call print
 
   # reset bootdrive
   mov $10, %cx
@@ -91,7 +146,6 @@ reset_end:
   #          because it uses absolute adresses larger than 16 bit)
   #   (NOTE2: this routine only loads 0x48 sectors of the second stage into memory
   #          and is in general pretty whacky. should be replaced with sth more serious)
-  mov $10, %cx
 load:
   push %cx
   movw $load_msg, %si
@@ -101,18 +155,19 @@ load:
   movw $0x1000, %ax
   movw %ax, %es       # buffer address (segment)
   movb $0x02, %ah     # function 0x02: read a sector
-  movb $0x048, %al     # sectors to read count
+  movb $0xFF, %al     # sectors to read count
   movb $0x00, %ch     # cylinder
-  movb $0x02, %cl     # sector
+  movb $0x09, %cl     # sector
   movb $0x00, %dh     # head
   # dl (drive) keep as is
   int $0x13
-  pop %cx
-  jnc load_end
-  loop load
-  jc error
-load_end:
+  jc load_end
+  
+  movw $done_msg, %si
+  call print
+  jmp error
 
+load_end:
   movw $done_msg, %si
   call print
 
@@ -131,25 +186,16 @@ load_end:
   or $1, %eax
   mov %eax, %cr0
 
+  jmp error_loop
+
   ljmp $0x8, $protected
 
-.code32
-protected:
-  # setup registers with appropriate GDT values
-  mov $0x10, %eax
-  mov %eax, %ds
-  mov %eax, %es
-  mov %eax, %fs
-  mov %eax, %gs
-  mov %eax, %ss
 
-  # jump to second stage code
-  ljmp $0x08, $__SS_START
-
-.code16
+  # auxiliary functions
 error:
   movw $fail_msg, %si
   call print
+  
 error_loop:
   jmp error_loop
 
@@ -196,8 +242,8 @@ checkA20:
   mov $0xFFFF, %ax
   mov %ax, %es
 
-  mov $0x7DFE, %si
-  mov $0x7E0E, %di
+  mov $0x0500, %si
+  mov $0x0510, %di
 
   movw %ds:(%si), %cx
   movw %es:(%di), %dx
@@ -209,9 +255,61 @@ checkA20:
   pop %ds
   ret
 
-.section .data
-a20_msg:
+  # delays for at least a given number of cycles.
+  # CX: number of cycles to delay
+delay:
+  nop
+  loop delay
+  ret
+
+# this string needs to stay outside of data section
+# because it is used before the data section is loaded
+load_bl_msg:
+  .ascii "Loading bootloader..."
+  .byte 0
+
+
+.code32
+protected:
+  # setup registers with appropriate GDT values
+  mov $0x10, %eax
+  mov %eax, %ds
+  mov %eax, %es
+  mov %eax, %fs
+  mov %eax, %gs
+  mov %eax, %ss
+
+  # jump to second stage code
+  ljmp $0x08, $__SS_START
+ 
+
+.section .data 
+a20_check_msg:
   .ascii "Checking A20..."
+  .byte 0
+
+a20_enable_msg:
+  .ascii "Enabling A20 (BIOS)..."
+  .byte 13
+  .byte 10
+  .byte 0
+
+a20_fail:
+  .ascii "Could not enable A20 gate. HALT"
+  .byte 13
+  .byte 10
+  .byte 0
+
+a20_enable_bios_msg:
+  .ascii " BIOS: "
+  .byte 0
+
+a20_enable_kb_msg:
+  .ascii " keyboard controller: "
+  .byte 0
+
+a20_enable_fasta20_msg:
+  .ascii " fast A20 method: "
   .byte 0
 
 reset_msg: 
@@ -237,6 +335,18 @@ done_msg:
 
 fail_msg:
   .ascii "fail"
+  .byte 13
+  .byte 10
+  .byte 0
+
+enabled_msg:
+  .ascii "enabled"
+  .byte 13
+  .byte 10
+  .byte 0
+
+disabled_msg:
+  .ascii "disabled"
   .byte 13
   .byte 10
   .byte 0
