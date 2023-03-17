@@ -23,7 +23,7 @@ void *create_kernel_environment() {
     (*pdir)[PAGE_DIR_INDEX(KERNEL_VMA)].entry = MAKE_PAGE_ENTRY(kernel, 0b000000000011);
 
     for (uint32_t i = 0; i < 1 << 10; i++) {
-        (*kernel)[i].entry = MAKE_PAGE_ENTRY(0x100000 + PAGE_SIZE * i, 0b000000000011);
+        (*kernel)[i].entry = MAKE_PAGE_ENTRY(0x10000 + PAGE_SIZE * i, 0b000000000011);
     }
 
     // identity map first 4M of memory
