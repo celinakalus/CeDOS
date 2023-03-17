@@ -1,6 +1,6 @@
 .RECIPEPREFIX = >
 
-LOCAL_BUILD := $(GLOBAL_BUILD)/stage2
+LOCAL_BUILD := $(GLOBAL_BUILD)/boot
 
 SRC_DIR := $(shell pwd)
 
@@ -18,9 +18,9 @@ $(DIRS):
 > $(MKDIR) $(DIRS)
 
 .PHONY: build
-build: $(GLOBAL_BUILD)/stage2.o
-$(GLOBAL_BUILD)/stage2.o: $(OBJECTS)
-> $(LD) $^ -r -T link.txt -o $@ --oformat elf32-i386
+build: $(GLOBAL_BUILD)/boot.o
+$(GLOBAL_BUILD)/boot.o: $(OBJECTS)
+> $(LD) $^ -r -T link.txt -Map=$(LOG_DIR)/boot_mapfile.txt -o $@ --oformat elf32-i386
 
 $(LOCAL_BUILD)/%.s.o: %.s
 > $(AS) -o $@ $<

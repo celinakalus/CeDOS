@@ -1,4 +1,4 @@
-.section .text
+.section .mbr
 .code16
 
   # disable interrupts
@@ -6,8 +6,8 @@
 
   # canonicalize %CS:%EIP to a known value
   ljmp $0, $start
-start:
 
+start:
   # setup segments
   movw $0x0000, %ax
   movw %ax, %ss
@@ -24,6 +24,30 @@ start:
   movb $0x05, %ah
   int $0x10
 
+  # load rest of bootloader
+  movw $0x0000, %bx   # buffer address
+  movw $0x07e0, %ax
+  movw %ax, %es       # buffer address (segment)
+  movb $0x02, %ah     # function 0x02: read a sector
+  movb $0x07, %al     # sectors to read count
+  movb $0x00, %ch     # cylinder
+  movb $0x02, %cl     # sector
+  movb $0x00, %dh     # head
+
+  # dl (drive) keep as is
+  int $0x13
+  pop %cx
+  jnc bl_loaded
+  loop load
+  jc error
+
+bl_loaded:
+  mov $done_msg, %si
+  jmp print
+
+debug:
+  jmp debug
+
   # check if A20 gate is enabled
   mov $a20_msg, %si
   call print
@@ -31,6 +55,7 @@ start:
   je disabled
 enabled:
   call print_done
+  jmp error_loop # debug
   jmp resume
 disabled:
   call print_fail
@@ -184,8 +209,9 @@ checkA20:
   pop %ds
   ret
 
+.section .data
 a20_msg:
-  .ascii "Enabling A20..."
+  .ascii "Checking A20..."
   .byte 0
 
 reset_msg: 

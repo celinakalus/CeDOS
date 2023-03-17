@@ -51,7 +51,7 @@ LOCAL_BUILD 		:= $(GLOBAL_BUILD)/components
 export CCFLAGS
 export GLOBAL_BUILD
 
-MODULES := stage1 stage2 kernel apps
+MODULES := boot kernel apps
 OBJECTS := $(patsubst %,$(LOCAL_BUILD)/%.o,$(MODULES)) $(LOCAL_BUILD)/apps_raw.o
 DIRS := $(LOCAL_BUILD)
 
@@ -77,13 +77,9 @@ $(LOG_DIR)/base.sym: $(GLOBAL_BUILD)/base.o
 $(LOG_DIR)/objdump.txt: $(GLOBAL_BUILD)/base.o
 > $(OBJDUMP) 	-D $< > $@
 
-.PHONY: stage1
-stage1:
-> $(MAKE) GLOBAL_BUILD=$(LOCAL_BUILD) -C src/stage1 $(LOCAL_BUILD)/stage1.o
-
-.PHONY: stage2
-stage2:
-> $(MAKE) GLOBAL_BUILD=$(LOCAL_BUILD) -C src/stage2 $(LOCAL_BUILD)/stage2.o
+.PHONY: boot
+boot:
+> $(MAKE) GLOBAL_BUILD=$(LOCAL_BUILD) -C src/boot $(LOCAL_BUILD)/boot.o
 
 .PHONY: kernel
 kernel:
