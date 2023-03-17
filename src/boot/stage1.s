@@ -19,6 +19,10 @@ start:
   movw $0x9000, %sp
   movw %sp, %bp
 
+  # save boot drive index
+  lea bootdriv_id, %si
+  movb %dl, (%si)
+
   # select display page 0
   movb $0, %al
   movb $0x05, %ah
@@ -36,15 +40,51 @@ start:
   movb $0x00, %ch     # cylinder
   movb $0x02, %cl     # sector
   movb $0x00, %dh     # head
+  lea bootdriv_id, %si
+  movb (%si), %dl
 
-  # dl (drive) keep as is
   int $0x13
-  pop %cx
   jc error
 
 bl_loaded:
   mov $done_msg, %si
   call print
+
+  # read hard drive parameters
+  movw $0x0000, %ax
+  movw %ax, %es
+  movw $0x0000, %di
+
+  movb $0x08, %ah
+  lea bootdriv_id, %si
+  movb (%si), %dl
+  int $0x13
+
+  xor %ax, %ax
+  movb %dl, %al
+  lea num_drives, %si
+  movb %al, (%si)
+
+  xor %ax, %ax
+  movb %dh, %al
+  inc %ax
+  lea num_heads, %si
+  movw %ax, (%si)
+
+  xor %ax, %ax
+  movb %cl, %al
+  shl $2, %ax
+  movb %ch, %al
+  inc %ax
+  lea num_cylinders, %si
+  movw %ax, (%si)
+
+  xor %ax, %ax
+  movb %cl, %al
+  and $0x003F, %ax
+  lea num_sectors, %si
+  movw %ax, (%si)
+
 
   # check if A20 gate is enabled
   mov $a20_check_msg, %si
@@ -146,28 +186,70 @@ reset_end:
   #          because it uses absolute adresses larger than 16 bit)
   #   (NOTE2: this routine only loads 0x48 sectors of the second stage into memory
   #          and is in general pretty whacky. should be replaced with sth more serious)
-load:
-  push %cx
+
+# arguments:
+# - ax: first sector (LBA)
+# - cx: last sector (LBA)
+# - bx: address offset
+load_sectors:
   movw $load_msg, %si
   call print
 
-  movw $0x0000, %bx   # buffer address
+  movw $0x0000, %ax
+  movw %ax, %ds
+
+  movw $0x0008, %ax
+  movw $0x0088, %cx
+  movw $0x0000, %bx
+
+load_sectors_loop:
+  push %ax
+  push %cx
+  push %bx
+
+  movw %bx, %di
+
+  lea num_sectors, %si
+  movw (%si), %bx
+  inc %ax
+  divb %bl
+  movb %ah, %cl
+
+  xor %ah, %ah
+  lea num_heads, %si
+  movw (%si), %bx
+  divb %bl
+  movb %ah, %dh
+  movb %al, %ch
+
+  lea bootdriv_id, %si
+  movb (%si), %dl
+
+  movw %di, %bx
+  # movw $0x0000, %bx   # buffer address
   movw $0x1000, %ax
   movw %ax, %es       # buffer address (segment)
+
   movb $0x02, %ah     # function 0x02: read a sector
-  movb $0xFF, %al     # sectors to read count
-  movb $0x00, %ch     # cylinder
-  movb $0x09, %cl     # sector
-  movb $0x00, %dh     # head
+  movb $0x01, %al     # sectors to read count
   # dl (drive) keep as is
   int $0x13
-  jc load_end
-  
-  movw $done_msg, %si
-  call print
-  jmp error
+  # jc error
+
+  pop %bx
+  pop %cx
+  pop %ax
+  inc %ax
+  add $0x200, %bx
+  cmp %ax, %cx
+  jne load_sectors_loop
 
 load_end:
+  movw $0x0000, %si   # buffer address
+  movw $0x1000, %ax
+  movw %ax, %es
+  call print
+
   movw $done_msg, %si
   call print
 
@@ -186,7 +268,7 @@ load_end:
   or $1, %eax
   mov %eax, %cr0
 
-  jmp error_loop
+  # jmp error_loop
 
   ljmp $0x8, $protected
 
@@ -225,6 +307,15 @@ print_fail:
   mov $fail_msg, %si
   jmp print
 
+
+# this string needs to stay outside of data section
+# because it is used before the data section is loaded
+load_bl_msg:
+  .ascii "Loading bootloader..."
+  .byte 0
+
+.section .text
+
   # ############################################
   # checkA20
   #   checks if A20 line is enabled
@@ -261,13 +352,6 @@ delay:
   nop
   loop delay
   ret
-
-# this string needs to stay outside of data section
-# because it is used before the data section is loaded
-load_bl_msg:
-  .ascii "Loading bootloader..."
-  .byte 0
-
 
 .code32
 protected:
@@ -358,3 +442,19 @@ GDT_DESCRIPTOR:
 IDT_DESCRIPTOR:
   .word 0
   .int 0
+
+.section .bss
+bootdriv_id:
+  .byte 0
+
+num_drives:
+  .byte 0
+
+num_sectors:
+  .word 0
+
+num_cylinders:
+  .word 0
+
+num_heads:
+  .word 0

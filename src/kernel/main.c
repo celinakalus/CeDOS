@@ -138,9 +138,11 @@ int os_main(void) {
     printk("Creating tasks.\n");
     
     printk("Loading ELF executable.\n");
-    elf_exec(SS_VMA + (ELF_LMA - SS_LMA), ELF_SIZE, "app1", "Hello World!");
-    elf_exec(SS_VMA + (ELF_LMA - SS_LMA), ELF_SIZE, "app2", "Hello World!");
-    elf_exec(SS_VMA + (ELF_LMA - SS_LMA), ELF_SIZE, "app3", "Hello World!");
+    VIRT_ADDR addr = (uint32_t)(KERNEL_VMA) + (uint32_t)(ELF_LMA - KERNEL_LMA);
+    printk("ELF address: %p\n", addr);
+    elf_exec(addr, ELF_SIZE, "app1", "Hello World!");
+    elf_exec(addr, ELF_SIZE, "app2", "Hello World!");
+    elf_exec(addr, ELF_SIZE, "app3", "Hello World!");
  
     printk("Starting scheduler.\n");
     sched_start();

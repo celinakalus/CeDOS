@@ -28,7 +28,7 @@ SECTIONS
     */apps.o(.*)
   } >APPLICATION_VMA
 
-  ELF : AT(LOADADDR(APPLICATION) + SIZEOF(APPLICATION))
+  ELF : AT(0x6000)
   {
     */apps_raw.o(.*)
   } >APPLICATION_VMA
