@@ -43,6 +43,52 @@ read_drive_params:
   mov $done_msg, %si
   call print
 
+  # print debug information
+  mov $num_drives_msg, %si
+  call print
+  lea num_drives, %si
+  xorw %ax, %ax
+  movb (%si), %al
+  call print_hex_int16
+  mov $newline, %si
+  call print
+
+  mov $bootdriv_id_msg, %si
+  call print
+  lea bootdriv_id, %si
+  xorw %ax, %ax
+  movb (%si), %al
+  call print_hex_int16
+  mov $newline, %si
+  call print
+
+  mov $num_heads_msg, %si
+  call print
+  lea num_heads, %si
+  xorw %ax, %ax
+  movw (%si), %ax
+  call print_hex_int16
+  mov $newline, %si
+  call print
+
+  mov $num_cylinders_msg, %si
+  call print
+  lea num_cylinders, %si
+  xorw %ax, %ax
+  movw (%si), %ax
+  call print_hex_int16
+  mov $newline, %si
+  call print
+
+  mov $num_sectors_msg, %si
+  call print
+  lea num_sectors, %si
+  xorw %ax, %ax
+  movw (%si), %ax
+  call print_hex_int16
+  mov $newline, %si
+  call print
+
   ret
 
 
@@ -96,13 +142,18 @@ load_sectors_loop:
   push %cx
   push %bx
 
+  movw $load_debug_msg, %si
+  call print
+  call print_hex_int16
+
   movw %bx, %di
 
   lea num_sectors, %si
   movw (%si), %bx
-  inc %ax
+  # inc %ax
   divb %bl
   movb %ah, %cl
+  incb %cl
 
   xor %ah, %ah
   lea num_heads, %si
@@ -115,15 +166,41 @@ load_sectors_loop:
   movb (%si), %dl
 
   movw %di, %bx
-  # movw $0x0000, %bx   # buffer address
+  
+  movw $load_debug_arrow, %si
+  call print
+
   movw $0x1000, %ax
+  call print_hex_int16
   movw %ax, %es       # buffer address (segment)
+
+  movw $load_debug_colon, %si
+  call print
+  movw %bx, %ax
+  call print_hex_int16
+
+  movw $load_debug_colon, %si
+  call print
+  movw %cx, %ax
+  call print_hex_int16
 
   movb $0x02, %ah     # function 0x02: read a sector
   movb $0x01, %al     # sectors to read count
   # dl (drive) keep as is
+
+  pusha
   int $0x13
-  # jc error
+  jc load_error
+
+  movw $load_debug_return, %si
+  call print
+  movb %ah, %al
+  xorb %ah, %ah
+  call print_hex_int16
+  movw $newline, %si
+  call print
+
+  popa
 
   pop %bx
   pop %cx
@@ -142,6 +219,37 @@ load_end:
   movw $done_msg, %si
   call print
 
+  ret
+
+load_error:
+  movw $load_debug_fail, %si
+  call print
+
+  popa
+  movw $load_debug_reg_ax, %si
+  call print
+  call print_hex_int16
+
+  movw %bx, %ax
+  movw $load_debug_reg_bx, %si
+  call print
+  call print_hex_int16
+
+  movw %cx, %ax
+  movw $load_debug_reg_cx, %si
+  call print
+  call print_hex_int16
+
+  movw %dx, %ax
+  movw $load_debug_reg_dx, %si
+  call print
+  call print_hex_int16
+
+  # TODO: dump hex values of buffer
+
+load_error_loop:
+  jmp load_error_loop
+
 
 .section .data 
 drive_params_msg:
@@ -154,6 +262,72 @@ reset_msg:
 
 load_msg: 
   .ascii "Loading kernel..."
+  .byte 13
+  .byte 10
+  .byte 0
+
+load_debug_msg:
+  .ascii "  Load: (sector) 0x"
+  .byte 0
+
+load_debug_colon:
+  .ascii ":"
+  .byte 0
+
+load_debug_arrow:
+  .ascii " -> (address) "
+  .byte 0
+
+load_debug_return:
+  .ascii " done, (ret) 0x"
+  .byte 0
+
+load_debug_fail:
+  .ascii " FAILED"
+  .byte 13
+  .byte 10
+  .byte 0
+
+load_debug_reg_ax:
+  .ascii " AX=0x"
+  .byte 0
+
+load_debug_reg_bx:
+  .ascii " BX=0x"
+  .byte 0
+
+load_debug_reg_cx:
+  .ascii " CX=0x"
+  .byte 0
+
+load_debug_reg_dx:
+  .ascii " DX=0x"
+  .byte 0
+
+
+bootdriv_id_msg:
+  .ascii "- Boot drive ID: 0x"
+  .byte 0
+
+num_drives_msg:
+  .ascii "- Number of drives: 0x"
+  .byte 0
+
+num_sectors_msg:
+  .ascii "- Sectors per Track: 0x"
+  .byte 0
+
+num_cylinders_msg:
+  .ascii "- Total cylinders: 0x"
+  .byte 0
+
+num_heads_msg:
+  .ascii "- Total drive heads: 0x"
+  .byte 0
+
+newline:
+  .byte 13
+  .byte 10
   .byte 0
 
 .section .bss

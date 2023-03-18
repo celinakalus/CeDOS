@@ -62,6 +62,7 @@ error_loop:
   # ############################################
 .global print
 print:
+  pusha
   movw $0x0000, %bx
   movb $0x0E, %ah
 
@@ -72,6 +73,7 @@ print_loop:
   int $0x10
   jmp print_loop
 print_end:
+  popa
   ret
 
 print_done:
@@ -82,6 +84,42 @@ print_fail:
   mov $fail_msg, %si
   jmp print
 
+.global print_hex_int16
+print_hex_int16:
+  xchg %al, %ah
+  call print_hex_char
+
+  xchg %al, %ah
+  call print_hex_char
+  ret
+
+# arguments:
+# - ax: values to print
+# - cx: number of values
+print_hex_char:
+  ror $4, %al
+  call print_hex_val
+
+  ror $4, %al
+  call print_hex_val
+  ret
+
+print_hex_val:
+  pusha
+  movw $0x0000, %bx
+  lea hex_table, %di
+  
+  andw $0x000F, %ax
+  add %ax, %di
+  movb %ds:(%di), %al
+  movb $0x0E, %ah
+  int $0x10
+  popa
+  ret
+
+
+hex_table:
+  .ascii "0123456789ABCDEF"
 
 # this string needs to stay outside of data section
 # because it is used before the data section is loaded
