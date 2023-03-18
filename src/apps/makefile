@@ -20,9 +20,9 @@ $(DIRS):
 .PHONY: build
 build: $(GLOBAL_BUILD)/apps.o
 $(GLOBAL_BUILD)/apps.o: $(OBJECTS)
-> $(LD) -T link.txt $^ -o $(GLOBAL_BUILD)/apps.o --oformat elf32-i386
-> $(OBJCOPY) -I binary -O elf32-i386 $(GLOBAL_BUILD)/apps.o $(GLOBAL_BUILD)/apps_raw.o
-> $(LD) -T link.txt -r $^ -o $(GLOBAL_BUILD)/apps.o --oformat elf32-i386
+> $(LD) -T link.txt -Map=$(LOG_DIR)/apps_mapfile.txt  $^ -o $@ 
+# > $(OBJCOPY) -I binary -O elf32-i386 $(GLOBAL_BUILD)/apps.o $(GLOBAL_BUILD)/apps_raw.o
+# > $(LD) -T link.txt -r $^ -o $(GLOBAL_BUILD)/apps.o --oformat elf32-i386
 
 
 $(LOCAL_BUILD)/%.s.o: %.s

@@ -17,7 +17,7 @@ SECTIONS
     */boot.o(.*)
   } >BOOT_VMA
 
-  KERNEL : AT(0x1000)
+  KERNEL : AT(0x5E00)
   {
     */kernel.o(.*)
     */kernel.o(.bss)
@@ -28,7 +28,7 @@ SECTIONS
     */apps.o(.*)
   } >APPLICATION_VMA
 
-  ELF : AT(0x6000)
+  ELF : AT(0xB600)
   {
     */apps_raw.o(.*)
   } >APPLICATION_VMA

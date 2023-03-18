@@ -8,6 +8,16 @@ void *ss_memset(void *ptr, uint8_t value, uint32_t num) {
     return ptr;
 }
 
+void ss_copy() {
+    char *src = (char*)(0x14E00);
+    char *dest = (char*)(0x40000);
+    int num = 0x80 * 0x200;
+
+    for (uint32_t i = 0; i < num; i++) {
+        dest[i] = src[i];
+    }
+}
+
 void *create_kernel_environment() {
     PAGE_DIR_ENTRY (*pdir)[PAGE_ENTRY_COUNT] = (void*)(0 * PAGE_SIZE);
     PAGE_TABLE_ENTRY (*kernel)[PAGE_ENTRY_COUNT] = (void*)(1 * PAGE_SIZE);
@@ -20,10 +30,10 @@ void *create_kernel_environment() {
     (*pdir)[PAGE_ENTRY_COUNT - 1].entry = MAKE_PAGE_ENTRY(pdir, 0b000000000011);
 
     // map 4M of kernel to 0xC0000000
-    (*pdir)[PAGE_DIR_INDEX(KERNEL_VMA)].entry = MAKE_PAGE_ENTRY(kernel, 0b000000000011);
+    (*pdir)[PAGE_DIR_INDEX(0xC0000000)].entry = MAKE_PAGE_ENTRY(kernel, 0b000000000011);
 
     for (uint32_t i = 0; i < 1 << 10; i++) {
-        (*kernel)[i].entry = MAKE_PAGE_ENTRY(0x10000 + PAGE_SIZE * i, 0b000000000011);
+        (*kernel)[i].entry = MAKE_PAGE_ENTRY(0x40000 + PAGE_SIZE * i, 0b000000000011);
     }
 
     // identity map first 4M of memory

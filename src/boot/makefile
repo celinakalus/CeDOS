@@ -18,9 +18,9 @@ $(DIRS):
 > $(MKDIR) $(DIRS)
 
 .PHONY: build
-build: $(GLOBAL_BUILD)/boot.o
-$(GLOBAL_BUILD)/boot.o: $(OBJECTS)
-> $(LD) $^ -r -T link.txt -Map=$(LOG_DIR)/boot_mapfile.txt -o $@ --oformat elf32-i386
+build: $(GLOBAL_BUILD)/boot.bin
+$(GLOBAL_BUILD)/boot.bin: $(OBJECTS)
+> $(LD) $^ -T link.txt -Map=$(LOG_DIR)/boot_mapfile.txt -o $@
 
 $(LOCAL_BUILD)/%.s.o: %.s
 > $(AS) -o $@ $<

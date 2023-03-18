@@ -44,8 +44,50 @@ start:
   movb (%si), %dl
 
   int $0x13
-  jc error
+  jnc bl_loaded
 
+  # auxiliary functions
+error:
+  movw $fail_msg, %si
+  call print
+  
+error_loop:
+  jmp error_loop
+
+  # ############################################
+  # print
+  #   prints out a string on the screen
+  #   %si: points to the message to be printed
+  # ############################################
+print:
+  movw $0x0000, %bx
+  movb $0x0E, %ah
+
+print_loop:
+  lodsb
+  or %al, %al
+  jz print_end
+  int $0x10
+  jmp print_loop
+print_end:
+  ret
+
+print_done:
+  mov $done_msg, %si
+  jmp print
+
+print_fail:
+  mov $fail_msg, %si
+  jmp print
+
+
+# this string needs to stay outside of data section
+# because it is used before the data section is loaded
+load_bl_msg:
+  .ascii "Loading bootloader..."
+  .byte 0
+
+.section .text
 bl_loaded:
   mov $done_msg, %si
   call print
@@ -272,50 +314,6 @@ load_end:
 
   ljmp $0x8, $protected
 
-
-  # auxiliary functions
-error:
-  movw $fail_msg, %si
-  call print
-  
-error_loop:
-  jmp error_loop
-
-  # ############################################
-  # print
-  #   prints out a string on the screen
-  #   %si: points to the message to be printed
-  # ############################################
-print:
-  movw $0x0000, %bx
-  movb $0x0E, %ah
-
-print_loop:
-  lodsb
-  or %al, %al
-  jz print_end
-  int $0x10
-  jmp print_loop
-print_end:
-  ret
-
-print_done:
-  mov $done_msg, %si
-  jmp print
-
-print_fail:
-  mov $fail_msg, %si
-  jmp print
-
-
-# this string needs to stay outside of data section
-# because it is used before the data section is loaded
-load_bl_msg:
-  .ascii "Loading bootloader..."
-  .byte 0
-
-.section .text
-
   # ############################################
   # checkA20
   #   checks if A20 line is enabled
@@ -362,6 +360,8 @@ protected:
   mov %eax, %fs
   mov %eax, %gs
   mov %eax, %ss
+
+  call ss_copy
   
   # create a page directory for the kernel that maps it to 0xC0000000
   # and identity maps the first 1M of memory
@@ -376,7 +376,7 @@ protected:
   movl %eax, %cr0
 
   # jump to kernel code
-  ljmp $8, $__KERNEL_START
+  ljmp $8, $0xC0000000
 
   # loop until the heat death of the universe
 loop:
