@@ -28,3 +28,11 @@ Simple x86 operating system written in assembly and C.
 * GCC 12.2.0
 * binutils 2.40
 * QEMU 4.2.1
+
+## Roadmap
+[ ] Implement FAT12 support in bootloader
+[ ] Add FAT12 kernel driver with syscall interface
+[ ] Allow execution of ELF files by file system path
+[ ] Implement proper POSIX file interface
+[ ] Add a basic shell
+[ ] Add functions for VGA graphics
