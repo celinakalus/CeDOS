@@ -138,6 +138,8 @@ bl_loaded:
 
   call reset_drive
 
+  call find_bootable_part
+
   call load_kernel
 
   movw $gdt_msg, %si

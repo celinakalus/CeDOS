@@ -130,11 +130,6 @@ load_kernel:
   movw $load_msg, %si
   call print
 
-  movw $0x0000, %ax
-  movw %ax, %ds
-
-  movw $0x0008, %ax
-  movw $0x0088, %cx
   movw $0x0000, %bx
 
 load_sectors_loop:
@@ -142,9 +137,9 @@ load_sectors_loop:
   push %cx
   push %bx
 
-  movw $load_debug_msg, %si
-  call print
-  call print_hex_int16
+  # movw $load_debug_msg, %si
+  # call print
+  # call print_hex_int16
 
   movw %bx, %di
 
@@ -167,22 +162,22 @@ load_sectors_loop:
 
   movw %di, %bx
   
-  movw $load_debug_arrow, %si
-  call print
+  # movw $load_debug_arrow, %si
+  # call print
 
   movw $0x1000, %ax
-  call print_hex_int16
   movw %ax, %es       # buffer address (segment)
+  # call print_hex_int16
 
-  movw $load_debug_colon, %si
-  call print
-  movw %bx, %ax
-  call print_hex_int16
+  # movw $load_debug_colon, %si
+  # call print
+  # movw %bx, %ax
+  # call print_hex_int16
 
-  movw $load_debug_colon, %si
-  call print
-  movw %cx, %ax
-  call print_hex_int16
+  # movw $load_debug_colon, %si
+  # call print
+  # movw %cx, %ax
+  # call print_hex_int16
 
   movb $0x02, %ah     # function 0x02: read a sector
   movb $0x01, %al     # sectors to read count
@@ -192,12 +187,14 @@ load_sectors_loop:
   int $0x13
   jc load_error
 
-  movw $load_debug_return, %si
-  call print
-  movb %ah, %al
-  xorb %ah, %ah
-  call print_hex_int16
-  movw $newline, %si
+  # movw $load_debug_return, %si
+  # call print
+  # movb %ah, %al
+  # xorb %ah, %ah
+  # call print_hex_int16
+  # movw $newline, %si
+  # call print
+  movw $load_msg_dot, %si
   call print
 
   popa
@@ -261,9 +258,13 @@ reset_msg:
   .byte 0
 
 load_msg: 
-  .ascii "Loading kernel..."
-  .byte 13
-  .byte 10
+  .ascii "Loading kernel"
+  # .byte 13
+  # .byte 10
+  .byte 0
+
+load_msg_dot:
+  .ascii "."
   .byte 0
 
 load_debug_msg:
