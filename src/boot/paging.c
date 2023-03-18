@@ -10,7 +10,7 @@ void *ss_memset(void *ptr, uint8_t value, uint32_t num) {
 
 void ss_copy() {
     char *src = (char*)(0x14E00);
-    char *dest = (char*)(0x40000);
+    char *dest = (char*)(0x100000);
     int num = 0x80 * 0x200;
 
     for (uint32_t i = 0; i < num; i++) {
@@ -33,7 +33,7 @@ void *create_kernel_environment() {
     (*pdir)[PAGE_DIR_INDEX(0xC0000000)].entry = MAKE_PAGE_ENTRY(kernel, 0b000000000011);
 
     for (uint32_t i = 0; i < 1 << 10; i++) {
-        (*kernel)[i].entry = MAKE_PAGE_ENTRY(0x40000 + PAGE_SIZE * i, 0b000000000011);
+        (*kernel)[i].entry = MAKE_PAGE_ENTRY(0x100000 + PAGE_SIZE * i, 0b000000000011);
     }
 
     // identity map first 4M of memory
