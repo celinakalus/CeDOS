@@ -14,7 +14,8 @@ SECTIONS
   {
     */*(.text)
     */*(.data)
-    */*(.*)
+    */*(.rodata*)
+    
   } >KERNEL_VMA
 }
 

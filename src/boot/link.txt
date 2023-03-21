@@ -21,6 +21,5 @@ SECTIONS
     BYTE(0xAA)
     */*.o(.text)
     */*.o(.data)
-    */*.o(.*)
   } >BOOT_VMA
 }

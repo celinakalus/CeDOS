@@ -65,7 +65,7 @@ build: $(GLOBAL_BUILD)/cedos.img
 $(GLOBAL_BUILD)/fat.img: $(MODULES)
 # > $(LD) 		$(OBJECTS) -r -T link.txt -Map=$(LOG_DIR)/elf_mapfile.txt --oformat elf32-i386 -o $@
 > dd if=/dev/zero of=$@ count=128
-> mkfs.fat -n "cedos" -S 512  $@
+> mkfs.fat -n "cedos" -S 512 -s 8 -r 32  $@
 > mkdir -p ./mnt
 > sudo mount $@ ./mnt
 > sudo cp $(LOCAL_BUILD)/kernel.bin ./mnt
