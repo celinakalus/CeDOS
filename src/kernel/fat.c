@@ -184,3 +184,24 @@ uint16_t FAT_next_cluster(uint16_t cluster) {
     }
 }
 
+void *FAT_find_file(const char *fname) {
+    int i = 0;
+
+    void *addr = (void *)(0);
+    while (1) {
+        char buffer[832];
+        uint16_t first_cluster;
+        uint32_t file_size;
+
+        i = FAT_root_dir_next(i, buffer, &first_cluster, &file_size);
+        if (i <= 0) { break; }
+
+        if (strcmp(buffer, fname) == 0) {
+            // file found
+            addr = FAT_read_sector_offset(data_lba + ((first_cluster - 2) * boot_sect->sect_per_cluster), NULL);
+            break;
+        }
+    }
+
+    return addr;
+}

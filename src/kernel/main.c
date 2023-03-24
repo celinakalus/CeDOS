@@ -18,6 +18,7 @@
 
 #include "linker.h"
 #include "assert.h"
+#include "string.h"
 
 int os_init(void) {
     core_init();
@@ -168,17 +169,16 @@ int os_main(void) {
         printk("\n");
     }
 
-    while (1) {}
-
     // create test tasks
     printk("Creating tasks.\n");
     
     printk("Loading ELF executable.\n");
-    VIRT_ADDR addr = (uint32_t)(KERNEL_VMA) + (uint32_t)(0x8600 - (int)KERNEL_LMA);
-    printk("ELF address: %p\n", addr);
-    elf_exec(addr, 0x1000, "app1", "Hello World!");
-    elf_exec(addr, 0x1000, "app2", "Hello World!");
-    elf_exec(addr, 0x1000, "app3", "Hello World!");
+    VIRT_ADDR elf_addr = FAT_find_file("apps.o");
+    assert(elf_addr != (void*)(0));
+    printk("ELF address: %p\n", elf_addr);
+    elf_exec(elf_addr, 0x1000, "app1", "Hello World!");
+    elf_exec(elf_addr, 0x1000, "app2", "Hello World!");
+    elf_exec(elf_addr, 0x1000, "app3", "Hello World!");
  
     printk("Starting scheduler.\n");
     sched_start();
