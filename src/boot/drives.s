@@ -130,15 +130,14 @@ load_sectors:
   movw $load_msg, %si
   call print
 
-  movw $0x0000, %bx
+  movw $0x1000, %bx
+  movw %bx, %es
 
 load_sectors_loop:
   push %ax
   push %cx
   push %bx
 
-  # movw $load_debug_msg, %si
-  # call print
   # call print_hex_int16
 
   movw %bx, %di
@@ -160,24 +159,10 @@ load_sectors_loop:
   lea bootdriv_id, %si
   movb (%si), %dl
 
-  movw %di, %bx
+  movw $0x0000, %bx
   
   # movw $load_debug_arrow, %si
   # call print
-
-  movw $0x1000, %ax
-  movw %ax, %es       # buffer address (segment)
-  # call print_hex_int16
-
-  # movw $load_debug_colon, %si
-  # call print
-  # movw %bx, %ax
-  # call print_hex_int16
-
-  # movw $load_debug_colon, %si
-  # call print
-  # movw %cx, %ax
-  # call print_hex_int16
 
   movb $0x02, %ah     # function 0x02: read a sector
   movb $0x01, %al     # sectors to read count
@@ -187,13 +172,6 @@ load_sectors_loop:
   int $0x13
   jc load_error
 
-  # movw $load_debug_return, %si
-  # call print
-  # movb %ah, %al
-  # xorb %ah, %ah
-  # call print_hex_int16
-  # movw $newline, %si
-  # call print
   movw $load_msg_dot, %si
   call print
 
@@ -203,7 +181,9 @@ load_sectors_loop:
   pop %cx
   pop %ax
   inc %ax
-  add $0x200, %bx
+  movw %es, %bx
+  add $0x20, %bx
+  movw %bx, %es
   cmp %ax, %cx
   jne load_sectors_loop
 
@@ -238,6 +218,11 @@ load_error:
   call print_hex_int16
 
   movw %dx, %ax
+  movw $load_debug_reg_dx, %si
+  call print
+  call print_hex_int16
+
+  movw %es, %ax
   movw $load_debug_reg_dx, %si
   call print
   call print_hex_int16
