@@ -14,6 +14,8 @@
 
 #include "cedos/elf.h"
 
+#include "cedos/fat.h"
+
 #include "linker.h"
 #include "assert.h"
 
@@ -133,6 +135,40 @@ int sysinit(void) {
 
 int os_main(void) {
     infodump();
+
+    FAT_init();
+
+    int i = 0;
+
+    while (1) {
+        char buffer[832];
+        uint16_t first_cluster;
+        uint32_t file_size;
+
+        i = FAT_root_dir_next(i, buffer, &first_cluster, &file_size);
+        if (i <= 0) { break; }
+
+        printk("%s (start: %i, size: %i)\n", buffer, first_cluster, file_size);
+
+        uint16_t cluster = first_cluster;
+
+        if (cluster == 0xFFF || cluster == 0x000) { continue; }
+
+        printk("  clusters: ");
+        while (1) {
+            printk("%x", cluster);
+
+            //char *sect = FAT_read_cluster(cluster);
+            //hexdump(sect, 512 * 8);
+
+            cluster = FAT_next_cluster(cluster);
+            if (cluster == 0xFFF || cluster == 0x000) { break; }
+            printk(", ");
+        }
+        printk("\n");
+    }
+
+    while (1) {}
 
     // create test tasks
     printk("Creating tasks.\n");
