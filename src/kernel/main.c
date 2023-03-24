@@ -20,6 +20,12 @@
 #include "assert.h"
 #include "string.h"
 
+#ifdef DEBUG
+#define PRINT_DBG(...) printk("[" __FILE__ "] " __VA_ARGS__)
+#else
+#define PRINT_DBG(...) {}
+#endif
+
 int os_init(void) {
     core_init();
     printk("Core functions initialized.\n");
@@ -149,29 +155,22 @@ int os_main(void) {
         i = FAT_root_dir_next(i, buffer, &first_cluster, &file_size);
         if (i <= 0) { break; }
 
-        printk("%s (start: %i, size: %i)\n", buffer, first_cluster, file_size);
+        PRINT_DBG("%s (start: %i, size: %i)\n", buffer, first_cluster, file_size);
 
         uint16_t cluster = first_cluster;
 
         if (cluster == 0xFFF || cluster == 0x000) { continue; }
 
-        printk("  clusters: ");
+        PRINT_DBG("  clusters: \n");
         while (1) {
-            printk("%x", cluster);
+            PRINT_DBG("    %x\n", cluster);
 
             //char *sect = FAT_read_cluster(cluster);
             //hexdump(sect, 512 * 8);
 
             cluster = FAT_next_cluster(cluster);
             if (cluster == 0xFFF || cluster == 0x000) { break; }
-            printk(", ");
         }
-        printk("\n");
-    }
-
-    while (1) {
-        int c = std_kb->read();
-        printk("a");
     }
 
     // create test tasks

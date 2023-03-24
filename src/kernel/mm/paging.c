@@ -26,6 +26,12 @@
         ((PAGE_DIR_ENTRY*)(PAGE_TABLE_ALT_MAPPED_ADDR(PAGE_ENTRY_COUNT - 1)))
         
 #define PAGE_TABLE_FLAGS 0b000000000011
+
+#ifdef DEBUG
+#define PRINT_DBG(...) printk("[" __FILE__ "] " __VA_ARGS__)
+#else
+#define PRINT_DBG(...) {}
+#endif
         
 __attribute__((always_inline)) inline int is_present(uint32_t entry) {
     return (entry & 0b000000000001);
@@ -120,7 +126,7 @@ size_t copy_to_pdir(VIRT_ADDR src, size_t length, PHYS_ADDR pdir, VIRT_ADDR dest
         uint32_t offset = ((uint32_t)dest % PAGE_SIZE);
         uint32_t part_length = (offset + length <= PAGE_SIZE) ? length : PAGE_SIZE - offset;
 
-        printk("src=%p dest=%p length=%i offset=%i plen=%i\n", src, dest, length, offset, part_length);
+        PRINT_DBG("src=%p dest=%p length=%i offset=%i plen=%i\n", src, dest, length, offset, part_length);
 
         for (uint32_t i = 0; i < part_length; i++) {
             ((uint8_t*)mount_dest)[offset + i] = ((uint8_t*)src)[i];
@@ -196,7 +202,7 @@ EXCEPTION(page_fault_isr, frame, error_code) {
     volatile VIRT_ADDR faulty_addr;
     __asm__ volatile ("mov %%cr2, %0" : "=a" (faulty_addr));
     //if (PAGE_DIR_INDEX(faulty_addr) >= PAGE_ENTRY_COUNT - 2) { return; }
-    printk("PAGE FAULT: %X\n", faulty_addr);
+    PRINT_DBG("PAGE FAULT: %X\n", faulty_addr);
     PHYS_ADDR new_page = get_free_page();
     force_map_page_to_this(new_page, PAGE_DIR_INDEX(faulty_addr), PAGE_TABLE_INDEX(faulty_addr), PAGE_TABLE_FLAGS);
     // dump registers to stdout

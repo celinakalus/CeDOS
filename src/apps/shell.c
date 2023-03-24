@@ -1,4 +1,5 @@
-#include "cedos.h"
+#include "common/cedos.h"
+#include "common/stdio.h"
 
 #include <stdint.h>
 
@@ -20,14 +21,13 @@ void read_line(char *buffer) {
 
 void main(void) {
     uint32_t a = 0, b = 1, i = 0;
+    printf("\n");
+    printf("CeDOS shell\n");
+
     while (1) {
-        uint32_t tmp = a + b;
-        a = b;
-        b = tmp;
-        printf("fib (%i) = %i\n", i, a);
-        i++;
-        char c = 0;
-        
-        printf("[%c]\n", (int)(uint32_t)c);//yield();
+        printf("/> ");
+
+        char buffer[256];
+        read_line(buffer);
     }
 }
