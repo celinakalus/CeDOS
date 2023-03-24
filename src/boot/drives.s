@@ -125,8 +125,8 @@ reset_end:
 # - ax: first sector (LBA)
 # - cx: last sector (LBA)
 # - bx: address offset
-.global load_kernel
-load_kernel:
+.global load_sectors
+load_sectors:
   movw $load_msg, %si
   call print
 

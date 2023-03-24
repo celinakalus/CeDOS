@@ -21,6 +21,7 @@ $(DIRS):
 build: $(GLOBAL_BUILD)/boot.bin
 $(GLOBAL_BUILD)/boot.bin: $(OBJECTS)
 > $(LD) $^ -T link.txt -Map=$(LOG_DIR)/boot_mapfile.txt -o $@
+> $(LD) $^ -T link.txt -Map=$(LOG_DIR)/boot_mapfile.txt  --oformat elf32-i386 -o boot.o
 
 $(LOCAL_BUILD)/%.s.o: %.s
 > $(AS) -o $@ $<

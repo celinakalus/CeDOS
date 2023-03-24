@@ -140,7 +140,7 @@ bl_loaded:
 
   call find_bootable_part
 
-  call load_kernel
+  call load_sectors
 
   movw $gdt_msg, %si
   call print
@@ -171,7 +171,7 @@ protected:
   mov %eax, %gs
   mov %eax, %ss
 
-  call ss_copy
+  call load_kernel
   
   # create a page directory for the kernel that maps it to 0xC0000000
   # and identity maps the first 1M of memory

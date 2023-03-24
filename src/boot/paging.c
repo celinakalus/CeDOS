@@ -1,22 +1,8 @@
 #include "paging.h"
 #include "linker.h"
+#include "string.h"
+#include "fat.h"
 
-void *ss_memset(void *ptr, uint8_t value, uint32_t num) {
-    for (uint32_t i = 0; i < num; i++) {
-        ((uint8_t*)ptr)[i] = value;
-    }
-    return ptr;
-}
-
-void ss_copy() {
-    char *src = (char*)(0x14E00);
-    char *dest = (char*)(0x100000);
-    int num = 0x80 * 0x200;
-
-    for (uint32_t i = 0; i < num; i++) {
-        dest[i] = src[i];
-    }
-}
 
 void *create_kernel_environment() {
     PAGE_DIR_ENTRY (*pdir)[PAGE_ENTRY_COUNT] = (void*)(0 * PAGE_SIZE);
@@ -24,7 +10,7 @@ void *create_kernel_environment() {
     PAGE_TABLE_ENTRY (*lowmem)[PAGE_ENTRY_COUNT] = (void*)(2 * PAGE_SIZE);
 
     // set everything to zero
-    ss_memset(pdir, 0, 3 * PAGE_SIZE);
+    memset(pdir, 0, 3 * PAGE_SIZE);
 
     // map page directory to itself
     (*pdir)[PAGE_ENTRY_COUNT - 1].entry = MAKE_PAGE_ENTRY(pdir, 0b000000000011);
