@@ -61,6 +61,9 @@ typedef struct __PROCESS {
     //! Name of the process.
     const char *name;
 
+    //! Path to the ELF executable of this process
+    const char *exe;
+
     //! String of arguments for the process
     char *args;
 

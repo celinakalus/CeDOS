@@ -125,6 +125,9 @@ void printk(const char* fmt, ...) {
         if (state == STATE_ARGUMENT && *fmt == 'X') {
             printk_uint32(va_arg(args, uint32_t));
             state = STATE_DEFAULT;
+        } else if (state == STATE_ARGUMENT && *fmt == 'x') {
+            printk_uint32(va_arg(args, uint32_t));
+            state = STATE_DEFAULT;
         } else if (state == STATE_ARGUMENT && *fmt == 'i') {
             printk_int(va_arg(args, int));
             state = STATE_DEFAULT;

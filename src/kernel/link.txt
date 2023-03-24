@@ -1,0 +1,26 @@
+OUTPUT_ARCH(i386)
+OUTPUT_FORMAT(binary)
+
+PAGE_SIZE = 1 << 12;
+
+MEMORY
+{
+  KERNEL_VMA :        ORIGIN = 0xC0000000, LENGTH = 0x30000000
+}
+
+SECTIONS
+{
+  KERNEL : AT(0x4E00)
+  {
+    */*(.text)
+    */*(.data)
+    */*(.rodata*)
+    
+  } >KERNEL_VMA
+}
+
+__KERNEL_LMA = LOADADDR(KERNEL);
+__KERNEL_VMA = ADDR(KERNEL);
+__KERNEL_SIZE = SIZEOF(KERNEL);
+
+__KERNEL_STACK_ADDR = 0xC0400000;

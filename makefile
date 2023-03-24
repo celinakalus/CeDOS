@@ -51,7 +51,7 @@ LOCAL_BUILD 		:= $(GLOBAL_BUILD)/components
 export CCFLAGS
 export GLOBAL_BUILD
 
-MODULES := stage1 stage2 kernel apps
+MODULES := boot kernel apps
 OBJECTS := $(patsubst %,$(LOCAL_BUILD)/%.o,$(MODULES)) $(LOCAL_BUILD)/apps_raw.o
 DIRS := $(LOCAL_BUILD)
 
@@ -60,34 +60,39 @@ $(DIRS):
 > $(MKDIR) $@
 
 .PHONY: build
-build: $(GLOBAL_BUILD)/base.img $(GLOBAL_BUILD)/base.o
+build: $(GLOBAL_BUILD)/cedos.img
 
-$(GLOBAL_BUILD)/base.o: $(MODULES)
-> $(LD) 		$(OBJECTS) -r -T link.txt -Map=$(LOG_DIR)/elf_mapfile.txt --oformat elf32-i386 -o $@
+$(GLOBAL_BUILD)/fat.img: $(MODULES)
+# > $(LD) 		$(OBJECTS) -r -T link.txt -Map=$(LOG_DIR)/elf_mapfile.txt --oformat elf32-i386 -o $@
+> dd if=/dev/zero of=$@ count=896
+> mkfs.fat -n "cedos" -S 512 -s 8 -r 32  $@
+> mkdir -p ./mnt
+> sudo mount $@ ./mnt
+> sudo cp $(LOCAL_BUILD)/kernel.bin ./mnt
+> sudo cp $(LOCAL_BUILD)/apps.o ./mnt
+> sudo umount ./mnt
 
-$(GLOBAL_BUILD)/base.img: $(MODULES)
-> $(LD) 		$(OBJECTS) -T link.txt -Map=$(LOG_DIR)/bin_mapfile.txt --oformat binary --nostdlib  -o $@
+$(GLOBAL_BUILD)/cedos.img: $(GLOBAL_BUILD)/fat.img | $(MODULES) 
+> dd if=/dev/zero of=$@ count=904
+> parted $@ mklabel msdos
+> parted $@ mkpart primary FAT32 8s 896s -s
+> parted $@ set 1 boot on
+> dd if=$< of=$@ seek=8 conv=notrunc
+> dd bs=1 if=$(LOCAL_BUILD)/boot.bin of=$@ count=446 conv=notrunc
+> dd if=$(LOCAL_BUILD)/boot.bin of=$@ skip=1 seek=1 count=7 conv=notrunc
+> parted $@ print list all
+# > $(LD) 		$(OBJECTS) -T link.txt -Map=$(LOG_DIR)/bin_mapfile.txt --oformat binary --nostdlib  -o $@
 
 .PHONY: logs
 logs: $(LOG_DIR)/base.sym $(LOG_DIR)/objdump.txt
 
-$(LOG_DIR)/base.sym: $(GLOBAL_BUILD)/base.o
-> $(OBJCOPY) 	--only-keep-debug $< $@
-
-$(LOG_DIR)/objdump.txt: $(GLOBAL_BUILD)/base.o
-> $(OBJDUMP) 	-D $< > $@
-
-.PHONY: stage1
-stage1:
-> $(MAKE) GLOBAL_BUILD=$(LOCAL_BUILD) -C src/stage1 $(LOCAL_BUILD)/stage1.o
-
-.PHONY: stage2
-stage2:
-> $(MAKE) GLOBAL_BUILD=$(LOCAL_BUILD) -C src/stage2 $(LOCAL_BUILD)/stage2.o
+.PHONY: boot
+boot:
+> $(MAKE) GLOBAL_BUILD=$(LOCAL_BUILD) -C src/boot $(LOCAL_BUILD)/boot.bin
 
 .PHONY: kernel
 kernel:
-> $(MAKE) GLOBAL_BUILD=$(LOCAL_BUILD) -C src/kernel $(LOCAL_BUILD)/kernel.o
+> $(MAKE) GLOBAL_BUILD=$(LOCAL_BUILD) -C src/kernel $(LOCAL_BUILD)/kernel.bin
 
 .PHONY: apps
 apps:

@@ -30,19 +30,9 @@ typedef struct {
 }__attribute__((packed)) SCHED_FRAME;
 
 /*!
- * Creates a new process and returns its process ID.
+ * Spawns a new process, loads it from the given ELF file, and returns its process ID.
  */
-PROCESS_ID sched_create(const char *name, char *args);
-
-/*!
- * Copies a piece of memory into the memory space of some process.
- */
-int sched_copyto(PROCESS_ID pid, VIRT_ADDR src, uint32_t length, VIRT_ADDR dest);
-
-/*!
- * Executes the (already created) task with the given process ID.
- */
-int sched_exec(PROCESS_ID pid, PROCESS_MAIN *entry);
+PROCESS_ID sched_spawn(const char *name, char *args);
 
 /*!
  * Return the ID of the current process.
