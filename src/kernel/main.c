@@ -169,13 +169,18 @@ int os_main(void) {
         printk("\n");
     }
 
+    while (1) {
+        int c = std_kb->read();
+        printk("a");
+    }
+
     // create test tasks
     printk("Creating tasks.\n");
     
     
-    sched_spawn("apps.o", "Hello World!");
-    sched_spawn("apps.o", "Hello World!");
-    sched_spawn("apps.o", "Hello World!");
+    sched_spawn("shell.o", "Hello World!");
+    //sched_spawn("fibonacci.o", "Hello World!");
+    //sched_spawn("fibonacci.o", "Hello World!");
  
     printk("Starting scheduler.\n");
     sched_start();

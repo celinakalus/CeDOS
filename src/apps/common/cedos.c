@@ -32,3 +32,8 @@ int sc_file_write(int fd, char *buffer, uint32_t size) {
     return res;
 }
 
+int process_spawn(const char *fname, const char *args) {
+    int res = 0;
+    interrupt(0x30, res, 4, fname, args, 0);
+    return res;
+}

@@ -69,7 +69,7 @@ $(GLOBAL_BUILD)/fat.img: $(MODULES)
 > mkdir -p ./mnt
 > sudo mount $@ ./mnt
 > sudo cp $(LOCAL_BUILD)/kernel.bin ./mnt
-> sudo cp $(LOCAL_BUILD)/apps.o ./mnt
+> sudo cp $(LOCAL_BUILD)/*.o ./mnt
 > sudo umount ./mnt
 
 $(GLOBAL_BUILD)/cedos.img: $(GLOBAL_BUILD)/fat.img | $(MODULES) 
@@ -96,7 +96,7 @@ kernel:
 
 .PHONY: apps
 apps:
-> $(MAKE) GLOBAL_BUILD=$(LOCAL_BUILD) -C src/apps $(LOCAL_BUILD)/apps.o
+> $(MAKE) GLOBAL_BUILD=$(LOCAL_BUILD) -C src/apps build
 
 .PHONY: clean
 clean:
