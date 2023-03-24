@@ -11,6 +11,7 @@
 #include "cedos/interrupts.h"
 #include "cedos/pit.h"
 #include "cedos/pic.h"
+#include "cedos/elf.h"
 
 #include "assembly.h"
 
@@ -34,10 +35,16 @@ PROCESS_ID get_current_process(void) {
 int sched_dispatcher(void);
 
 
+void entry_idle(char *args) {
+    while (1) { 
+        //printk("idle.\n"); 
+    }
+}
+
 /*!
- * Creates a new process and returns its process ID.
+ * Spawn a new process and returns its process ID.
  */
-PROCESS_ID sched_create(const char *name, char *args) {
+PROCESS_ID sched_spawn(const char *name, char *args) {
     crit_enter();
 
     PHYS_ADDR page_dir = create_empty_page_dir();
@@ -50,7 +57,6 @@ PROCESS_ID sched_create(const char *name, char *args) {
     p->esp = USER_STACK - sizeof(SCHED_FRAME);
     p->eflags = PROCESS_STD_EFLAGS;
     p->entry = 0xDEADBEEF;
-    p->state = PSTATE_CREATED;
     
     // TODO: implement with malloc
     strcpy(p->name_buf, name);
@@ -61,40 +67,6 @@ PROCESS_ID sched_create(const char *name, char *args) {
 
     PROCESS_ID pid = add_process(p, current_pid);
 
-    return pid;
-}
-
-
-/*!
- * Copies a piece of memory into the memory space of some process.
- */
-int sched_copyto(PROCESS_ID pid, VIRT_ADDR src, uint32_t length, VIRT_ADDR dest) {
-    crit_enter();
-    
-    PROCESS* p = get_process(pid);
-    PHYS_ADDR page_dir = p->page_dir;
-
-    copy_to_pdir(src, length, page_dir, dest);
-
-    crit_exit();
-
-    return 0;
-}
-
-
-/*!
- * Executes the (already created) task with the given process ID.
- */
-int sched_exec(PROCESS_ID pid, PROCESS_MAIN *entry) {
-    crit_enter();
-
-    PROCESS* p = get_process(pid);
-
-    if (p->state != PSTATE_CREATED) {
-        kpanic("Process executed multiple times after creation!");
-        return -1;
-    }
-
     // setup stack
     static SCHED_FRAME frame;
     frame.eax = frame.ebx = frame.ecx = frame.edx = 0;
@@ -102,8 +74,13 @@ int sched_exec(PROCESS_ID pid, PROCESS_MAIN *entry) {
     frame.ebp = p->ebp;
     frame.esp = p->esp;
     frame.eflags = p->eflags;
-    frame.eip = sched_dispatcher;
     frame.cs = 0x8;
+
+    if (name == NULL) {
+        frame.eip = entry_idle;
+    } else {
+        frame.eip = sched_dispatcher;
+    }
 
     // load stack
     copy_to_pdir(&frame, sizeof(frame), p->page_dir, p->esp);
@@ -114,7 +91,6 @@ int sched_exec(PROCESS_ID pid, PROCESS_MAIN *entry) {
     /* TODO: check if code exists at entry point */
 
     // start the process
-    p->entry = entry;
     p->state = PSTATE_READY;
 
     crit_exit();
@@ -175,12 +151,6 @@ void sched_interrupt_c(SCHED_FRAME * volatile frame, uint32_t volatile ebp) {
     pic1_eoi();
 }
 
-void entry_idle(char *args) {
-    while (1) { 
-        //printk("idle.\n"); 
-    }
-}
-
 extern void* sched_interrupt;
 
 int sched_init(void) {
@@ -190,8 +160,7 @@ int sched_init(void) {
     current_pid = 0;
 
     // create idle process
-    PROCESS_ID idle = sched_create("idle", NULL);
-    sched_exec(idle, entry_idle);
+    PROCESS_ID idle = sched_spawn(NULL, NULL);
 
     return 1;
 }
@@ -260,10 +229,10 @@ int sched_dispatcher(void) {
     //printk("Dispatching process %i...\n", current_pid);
 
     PROCESS* this = get_process(current_pid);
-    PROCESS_MAIN* entry = this->entry;
+
 
     // enter the actual program
-    entry(this->args);
+    elf_exec(this->name, this->args);
 
     //printk("Process %i terminated.\n", current_pid);
 

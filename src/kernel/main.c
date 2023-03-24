@@ -172,13 +172,10 @@ int os_main(void) {
     // create test tasks
     printk("Creating tasks.\n");
     
-    printk("Loading ELF executable.\n");
-    VIRT_ADDR elf_addr = FAT_find_file("apps.o");
-    assert(elf_addr != (void*)(0));
-    printk("ELF address: %p\n", elf_addr);
-    elf_exec(elf_addr, 0x1000, "app1", "Hello World!");
-    elf_exec(elf_addr, 0x1000, "app2", "Hello World!");
-    elf_exec(elf_addr, 0x1000, "app3", "Hello World!");
+    
+    sched_spawn("apps.o", "Hello World!");
+    sched_spawn("apps.o", "Hello World!");
+    sched_spawn("apps.o", "Hello World!");
  
     printk("Starting scheduler.\n");
     sched_start();

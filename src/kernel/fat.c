@@ -205,3 +205,32 @@ void *FAT_find_file(const char *fname) {
 
     return addr;
 }
+
+uint32_t FAT_read_file(const char *fname, void *buffer) {
+    int i = 0;
+
+    uint16_t first_cluster;
+    uint32_t file_size;
+    while (1) {
+        char buffer[832];
+
+        i = FAT_root_dir_next(i, buffer, &first_cluster, &file_size);
+        if (i <= 0) { return 0; }
+
+        if (strcmp(buffer, fname) == 0) { break; }
+    }
+    
+    // copy all clusters
+    uint16_t cluster = first_cluster;
+    uint32_t size = 0;
+
+    while (1) {
+        buffer = FAT_read_cluster(cluster, buffer);
+        cluster = FAT_next_cluster(cluster);
+        size += boot_sect->bytes_per_sect * boot_sect->sect_per_cluster;
+        
+        if (cluster == 0xFFF || cluster == 0x000) { break; }
+    }
+
+    return size;
+}

@@ -2,6 +2,9 @@
 #include "cedos/elf.h"
 #include "cedos/core.h"
 
+#include "cedos/fat.h"
+#include "cedos/sched/process.h"
+
 #include "assert.h"
 
 typedef struct {
@@ -115,28 +118,30 @@ void elf_infodump(VIRT_ADDR elf_pointer, uint32_t size) {
     }
 }
 
-PROCESS_ID elf_exec(VIRT_ADDR elf_pointer, uint32_t size, char *name, char *args) {
-    printk("Creating process %s...", name);
-    PROCESS_ID pid = sched_create(name, args);
-    printk("done, PID: %i.\n", pid);
+PROCESS_ID elf_exec(const char *fname, char *args) {
+    printk("Loading ELF executable \"%s\".\n", fname);
+    VIRT_ADDR elf_addr = (VIRT_ADDR*)(0xA0000000);
+    // TODO: needs to change when we have other file systems
+    int size = FAT_read_file(fname, elf_addr);
+    assert(size != 0);
 
-    ELF_HEADER *header = (ELF_HEADER*)elf_pointer;
+    ELF_HEADER *header = (ELF_HEADER*)(elf_addr);
 
     // magic number correct
-    assert(((uint32_t*)(elf_pointer))[0] == 0x464C457F);
+    assert(((uint32_t*)(elf_addr))[0] == 0x464C457F);
 
     // header size correct
     assert(sizeof(ELF_HEADER) == 52);
 
     // get section table
     int sh_offset = header->secthead_offset;
-    SECT_HEADER *sect_headers = (SECT_HEADER*)(elf_pointer + sh_offset);
+    SECT_HEADER *sect_headers = (SECT_HEADER*)(elf_addr + sh_offset);
     
     int num_sections = header->sh_num;
     int section_size = header->sh_entry_size;
 
     SECT_HEADER sect_names_sh = sect_headers[header->sh_strndx];
-    VIRT_ADDR sect_names_addr = elf_pointer + sect_names_sh.offset;
+    VIRT_ADDR sect_names_addr = elf_addr + sect_names_sh.offset;
 
     assert(sizeof(SECT_HEADER) == section_size);
 
@@ -147,16 +152,16 @@ PROCESS_ID elf_exec(VIRT_ADDR elf_pointer, uint32_t size, char *name, char *args
         char *name = (char*)(sect_names_addr + sh.name);
 
         if ((sh.flags & SHF_ALLOC) && (sh.flags & SHF_EXECINSTR)) {
-            VIRT_ADDR lma = elf_pointer + sh.offset;
+            VIRT_ADDR lma = elf_addr + sh.offset;
             VIRT_ADDR vma = sh.addr;
             uint32_t size = sh.size;
             printk("%p\n", sh.flags);
             printk("Copying code section %s to its destination ", name);
             printk("(LMA: %p, VMA: %p)\n", lma, vma);
 
-            sched_copyto(pid, lma, size, vma);
+            memcpy(vma, lma, size);
         } else if (sh.flags & SHF_ALLOC) {
-            VIRT_ADDR lma = elf_pointer + sh.offset;
+            VIRT_ADDR lma = elf_addr + sh.offset;
             VIRT_ADDR vma = sh.addr;
             printk("Allocating space for section %s ", name);
             printk("(LMA: %p, VMA: %p)\n", lma, vma);
@@ -170,11 +175,10 @@ PROCESS_ID elf_exec(VIRT_ADDR elf_pointer, uint32_t size, char *name, char *args
     printk("\n");
 
     printk("Entry point: %p\n", header->entry);
-    printk("Starting process %i...", pid);
 
-    sched_exec(pid, header->entry);
-
-    printk("done.\n");
+    // enter the process
+    PROCESS_MAIN *entry = header->entry;
+    entry(args);
 
     return 0;
 }
