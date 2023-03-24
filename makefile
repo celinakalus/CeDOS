@@ -64,7 +64,7 @@ build: $(GLOBAL_BUILD)/cedos.img
 
 $(GLOBAL_BUILD)/fat.img: $(MODULES)
 # > $(LD) 		$(OBJECTS) -r -T link.txt -Map=$(LOG_DIR)/elf_mapfile.txt --oformat elf32-i386 -o $@
-> dd if=/dev/zero of=$@ count=128
+> dd if=/dev/zero of=$@ count=896
 > mkfs.fat -n "cedos" -S 512 -s 8 -r 32  $@
 > mkdir -p ./mnt
 > sudo mount $@ ./mnt
@@ -73,9 +73,9 @@ $(GLOBAL_BUILD)/fat.img: $(MODULES)
 > sudo umount ./mnt
 
 $(GLOBAL_BUILD)/cedos.img: $(GLOBAL_BUILD)/fat.img | $(MODULES) 
-> dd if=/dev/zero of=$@ count=144
+> dd if=/dev/zero of=$@ count=904
 > parted $@ mklabel msdos
-> parted $@ mkpart primary FAT32 8s 128s -s
+> parted $@ mkpart primary FAT32 8s 896s -s
 > parted $@ set 1 boot on
 > dd if=$< of=$@ seek=8 conv=notrunc
 > dd bs=1 if=$(LOCAL_BUILD)/boot.bin of=$@ count=446 conv=notrunc
