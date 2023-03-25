@@ -8,11 +8,11 @@
             "mov %2, %%ebx;" \
             "mov %3, %%ecx;" \
             "mov %4, %%edx;" \
+            "lea %0, %%esi;" \
             "int $" #num ";" \
-            "mov %%eax, %0;" \
             : "=m" (res) \
             : "" (arg1), "" (arg2), "" (arg3), "" (arg4) \
-            : "eax", "ebx", "ecx", "edx" \
+            : "eax", "ebx", "ecx", "edx", "esi", "memory" \
         )
 
 /*!

@@ -8,6 +8,8 @@
 int sysprint(const char *fmt, int arg1, int arg2);
 int yield();
 int get_pid();
+int process_spawn(const char *fname, const char *args);
+void process_wait(int pid);
 
 int sc_file_read(int fd, char *buffer, uint32_t size);
 int sc_file_write(int fd, char *buffer, uint32_t size);

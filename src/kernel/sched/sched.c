@@ -11,13 +11,21 @@
 #include "cedos/interrupts.h"
 #include "cedos/pit.h"
 #include "cedos/pic.h"
+#include "cedos/elf.h"
 
 #include "assembly.h"
+#include "assert.h"
 
 #define KERNEL_PRIVATE_STACK (void*)(0xC0600000)
 #define USER_STACK (void*)(0xC0000000)
 
 #define PROCESS_STD_EFLAGS (0x00000286)
+
+#ifdef DEBUG
+#define PRINT_DBG(...) printk("[" __FILE__ "] " __VA_ARGS__)
+#else
+#define PRINT_DBG(...) {}
+#endif
 
 PROCESS* get_slot(void) {
     static PROCESS free_slots[8];
@@ -34,11 +42,22 @@ PROCESS_ID get_current_process(void) {
 int sched_dispatcher(void);
 
 
+void entry_idle(char *args) {
+    while (1) { 
+         
+    }
+}
+
 /*!
- * Creates a new process and returns its process ID.
+ * Spawn a new process and returns its process ID.
  */
-PROCESS_ID sched_create(const char *name, char *args) {
+PROCESS_ID sched_spawn(const char *name, char *args) {
     crit_enter();
+
+    if (name != NULL) {
+        int fd = FAT_openat(0, name, 0);
+        if (fd == -1) { return -1; }
+    }
 
     PHYS_ADDR page_dir = create_empty_page_dir();
 
@@ -50,7 +69,6 @@ PROCESS_ID sched_create(const char *name, char *args) {
     p->esp = USER_STACK - sizeof(SCHED_FRAME);
     p->eflags = PROCESS_STD_EFLAGS;
     p->entry = 0xDEADBEEF;
-    p->state = PSTATE_CREATED;
     
     // TODO: implement with malloc
     strcpy(p->name_buf, name);
@@ -60,40 +78,7 @@ PROCESS_ID sched_create(const char *name, char *args) {
     p->args = &(p->args_buf);
 
     PROCESS_ID pid = add_process(p, current_pid);
-
-    return pid;
-}
-
-
-/*!
- * Copies a piece of memory into the memory space of some process.
- */
-int sched_copyto(PROCESS_ID pid, VIRT_ADDR src, uint32_t length, VIRT_ADDR dest) {
-    crit_enter();
-    
-    PROCESS* p = get_process(pid);
-    PHYS_ADDR page_dir = p->page_dir;
-
-    copy_to_pdir(src, length, page_dir, dest);
-
-    crit_exit();
-
-    return 0;
-}
-
-
-/*!
- * Executes the (already created) task with the given process ID.
- */
-int sched_exec(PROCESS_ID pid, PROCESS_MAIN *entry) {
-    crit_enter();
-
-    PROCESS* p = get_process(pid);
-
-    if (p->state != PSTATE_CREATED) {
-        kpanic("Process executed multiple times after creation!");
-        return -1;
-    }
+    p->id = pid;
 
     // setup stack
     static SCHED_FRAME frame;
@@ -102,8 +87,13 @@ int sched_exec(PROCESS_ID pid, PROCESS_MAIN *entry) {
     frame.ebp = p->ebp;
     frame.esp = p->esp;
     frame.eflags = p->eflags;
-    frame.eip = sched_dispatcher;
     frame.cs = 0x8;
+
+    if (name == NULL) {
+        frame.eip = entry_idle;
+    } else {
+        frame.eip = sched_dispatcher;
+    }
 
     // load stack
     copy_to_pdir(&frame, sizeof(frame), p->page_dir, p->esp);
@@ -114,10 +104,11 @@ int sched_exec(PROCESS_ID pid, PROCESS_MAIN *entry) {
     /* TODO: check if code exists at entry point */
 
     // start the process
-    p->entry = entry;
     p->state = PSTATE_READY;
 
     crit_exit();
+
+    return pid;
 }
 
 
@@ -131,12 +122,21 @@ void sched_interrupt_c(SCHED_FRAME * volatile frame, uint32_t volatile ebp) {
         current->eip = frame->eip;
         current->eflags = frame->eflags;
 
+        
+
         // save stack checksum
         stack_compute_checksum(&(current->checksum), current->esp, current->ebp);
     }
 
+    PRINT_DBG("esp: %p\n", current->esp);
+    PRINT_DBG("ebp: %p\n", current->ebp);
+    PRINT_DBG("eip: %p\n", current->eip);
+    PRINT_DBG("eflags: %p\n", current->eflags);
+
     // select next process
+    PRINT_DBG("exiting %i, ", current_pid);
     current_pid = next_schedule(current_pid);
+    PRINT_DBG("entering %i\n", current_pid);
 
     // unblock all blocked processes
     for (PROCESS *p = get_first_process(); p != NULL; p = p->next) {
@@ -164,7 +164,7 @@ void sched_interrupt_c(SCHED_FRAME * volatile frame, uint32_t volatile ebp) {
     ebp = next->ebp;
     //frame->cs = 0x08;
     //frame->eip = next->eip;
-    //frame->eflags = next->eflags;
+    frame->eflags = next->eflags;
     frame->esp = next->esp;
     frame->ebp = next->ebp;
 
@@ -173,12 +173,6 @@ void sched_interrupt_c(SCHED_FRAME * volatile frame, uint32_t volatile ebp) {
     pit_setup_channel(PIT_CHANNEL_0, PIT_MODE_0, SCHED_INTERVAL);
 
     pic1_eoi();
-}
-
-void entry_idle(char *args) {
-    while (1) { 
-        //printk("idle.\n"); 
-    }
 }
 
 extern void* sched_interrupt;
@@ -190,15 +184,15 @@ int sched_init(void) {
     current_pid = 0;
 
     // create idle process
-    PROCESS_ID idle = sched_create("idle", NULL);
-    sched_exec(idle, entry_idle);
+    PROCESS_ID idle = sched_spawn(NULL, NULL);
+    assert(idle != -1);
 
     return 1;
 }
 
 void sched_yield(void) {
     crit_enter();
-    //printk("yield.\n");
+    //PRINT_DBG("yield.\n");
     PROCESS *current = get_process(current_pid);
     if (current != NULL && current->state != PSTATE_TERMINATED) {
         current->state = PSTATE_READY;
@@ -206,6 +200,7 @@ void sched_yield(void) {
     }
 
     uint32_t csc = crit_stash();
+    sti();
     INT(0x20);
     crit_restore(csc);
 
@@ -239,6 +234,19 @@ int sched_kill(PROCESS_ID pid) {
     return success;
 }
 
+void sched_wait(PROCESS_ID pid) {
+    assert(pid != current_pid);
+
+    if (pid < 0) { return; }
+
+    while (1) {
+        PROCESS *p = get_process(pid);
+        if (p->state == PSTATE_TERMINATED) { break; }
+
+        sched_yield();    
+    }
+}
+
 int sched_start(void) {
     current_pid = 0;
 
@@ -257,18 +265,18 @@ int sched_stop(void) {
 }
 
 int sched_dispatcher(void) {
-    //printk("Dispatching process %i...\n", current_pid);
+    PRINT_DBG("Dispatching process %i...\n", current_pid);
 
     PROCESS* this = get_process(current_pid);
-    PROCESS_MAIN* entry = this->entry;
+
 
     // enter the actual program
-    entry(this->args);
+    elf_exec(this->name, this->args);
 
-    //printk("Process %i terminated.\n", current_pid);
+    PRINT_DBG("Process %i terminated.\n", current_pid);
 
     sched_kill(current_pid);
 
     // just for absolute safety
-    while (1);
+    kpanic("Executing a terminated process!!\n");
 }

@@ -2,7 +2,16 @@
 #include "cedos/elf.h"
 #include "cedos/core.h"
 
+#include "cedos/fat.h"
+#include "cedos/sched/process.h"
+
 #include "assert.h"
+
+#ifdef DEBUG
+#define PRINT_DBG(...) printk("[" __FILE__ "] " __VA_ARGS__)
+#else
+#define PRINT_DBG(...) {}
+#endif
 
 typedef struct {
     uint8_t e_ident[16];
@@ -57,38 +66,38 @@ typedef struct {
 void elf_infodump(VIRT_ADDR elf_pointer, uint32_t size) {
     ELF_HEADER *header = (ELF_HEADER*)elf_pointer;
     
-    printk("Reading ELF file from location %p of length %i\n", elf_pointer, size);
-    printk("\n");
+    PRINT_DBG("Reading ELF file from location %p of length %i\n", elf_pointer, size);
+    PRINT_DBG("\n");
 
-    printk("ELF header size: %i\n", sizeof(ELF_HEADER));
+    PRINT_DBG("ELF header size: %i\n", sizeof(ELF_HEADER));
     assert(sizeof(ELF_HEADER) == 52);
-    printk("\n");
+    PRINT_DBG("\n");
 
-    printk("ELF header hexdump:\n");
+    PRINT_DBG("ELF header hexdump:\n");
     memdump(elf_pointer, 52);
-    printk("\n");
+    PRINT_DBG("\n");
 
-    printk("ELF header magic number:\n");
-    printk("%s\n", &(header->e_ident));
-    printk("\n");
+    PRINT_DBG("ELF header magic number:\n");
+    PRINT_DBG("%s\n", &(header->e_ident));
+    PRINT_DBG("\n");
 
-    printk("ELF header infodump:\n");
-    printk("- machine:       %i\n", header->machine);
-    printk("- version:       %i\n", header->version);
-    printk("- entry:         %p\n", header->entry);
-    printk("\n");
-    printk("- program headers:\n");
-    printk("  - offset:      %i\n", header->proghead_offset);
-    printk("  - entries:     %i\n", header->ph_num);
-    printk("  - entry size:  %i\n", header->ph_entry_size);
-    printk("\n");
-    printk("- section headers:\n");
-    printk("  - offset:      %i\n", header->secthead_offset);
-    printk("  - entries:     %i\n", header->sh_num);
-    printk("  - entry size:  %i\n", header->sh_entry_size);
-    printk("\n");
+    PRINT_DBG("ELF header infodump:\n");
+    PRINT_DBG("- machine:       %i\n", header->machine);
+    PRINT_DBG("- version:       %i\n", header->version);
+    PRINT_DBG("- entry:         %p\n", header->entry);
+    PRINT_DBG("\n");
+    PRINT_DBG("- program headers:\n");
+    PRINT_DBG("  - offset:      %i\n", header->proghead_offset);
+    PRINT_DBG("  - entries:     %i\n", header->ph_num);
+    PRINT_DBG("  - entry size:  %i\n", header->ph_entry_size);
+    PRINT_DBG("\n");
+    PRINT_DBG("- section headers:\n");
+    PRINT_DBG("  - offset:      %i\n", header->secthead_offset);
+    PRINT_DBG("  - entries:     %i\n", header->sh_num);
+    PRINT_DBG("  - entry size:  %i\n", header->sh_entry_size);
+    PRINT_DBG("\n");
 
-    printk("Enumerating sections:\n");
+    PRINT_DBG("Enumerating sections:\n");
 
     int sh_offset = header->secthead_offset;
     SECT_HEADER *sect_headers = (SECT_HEADER*)(elf_pointer + sh_offset);
@@ -105,76 +114,79 @@ void elf_infodump(VIRT_ADDR elf_pointer, uint32_t size) {
         SECT_HEADER sh = sect_headers[i];
         char *name = (char*)(sect_names_addr + sh.name);
 
-        printk("Section:       %s\n", name);
-        printk("- type:        %i\n", sh.type);
-        printk("- offset:      %i\n", sh.offset);
-        printk("- size:        %i\n", sh.size);
-        printk("- addr:        %i\n", sh.addr);
-        printk("- addr_align:  %i\n", sh.addr_align);
-        printk("\n");
+        PRINT_DBG("Section:       %s\n", name);
+        PRINT_DBG("- type:        %i\n", sh.type);
+        PRINT_DBG("- offset:      %i\n", sh.offset);
+        PRINT_DBG("- size:        %i\n", sh.size);
+        PRINT_DBG("- addr:        %i\n", sh.addr);
+        PRINT_DBG("- addr_align:  %i\n", sh.addr_align);
+        PRINT_DBG("\n");
     }
 }
 
-PROCESS_ID elf_exec(VIRT_ADDR elf_pointer, uint32_t size, char *name, char *args) {
-    printk("Creating process %s...", name);
-    PROCESS_ID pid = sched_create(name, args);
-    printk("done, PID: %i.\n", pid);
+PROCESS_ID elf_exec(const char *fname, char *args) {
+    PRINT_DBG("Loading ELF executable \"%s\".\n", fname);
+    VIRT_ADDR elf_addr = (VIRT_ADDR*)(0xA0000000);
+    // TODO: needs to change when we have other file systems
+    int fd = FAT_openat(0, fname, 0);
+    assert(fd != -1);
+    int size = FAT_read(fd, elf_addr, 0);
+    assert(size != 0);
 
-    ELF_HEADER *header = (ELF_HEADER*)elf_pointer;
+    ELF_HEADER *header = (ELF_HEADER*)(elf_addr);
 
     // magic number correct
-    assert(((uint32_t*)(elf_pointer))[0] == 0x464C457F);
+    assert(((uint32_t*)(elf_addr))[0] == 0x464C457F);
 
     // header size correct
     assert(sizeof(ELF_HEADER) == 52);
 
     // get section table
     int sh_offset = header->secthead_offset;
-    SECT_HEADER *sect_headers = (SECT_HEADER*)(elf_pointer + sh_offset);
+    SECT_HEADER *sect_headers = (SECT_HEADER*)(elf_addr + sh_offset);
     
     int num_sections = header->sh_num;
     int section_size = header->sh_entry_size;
 
     SECT_HEADER sect_names_sh = sect_headers[header->sh_strndx];
-    VIRT_ADDR sect_names_addr = elf_pointer + sect_names_sh.offset;
+    VIRT_ADDR sect_names_addr = elf_addr + sect_names_sh.offset;
 
     assert(sizeof(SECT_HEADER) == section_size);
 
     // go through all sections and copy/allocate memory as necessary
-    printk("Enumerating %i sections:\n", num_sections);
+    PRINT_DBG("Enumerating %i sections:\n", num_sections);
     for (int i = 0; i < num_sections; i++) {
         SECT_HEADER sh = sect_headers[i];
         char *name = (char*)(sect_names_addr + sh.name);
 
         if ((sh.flags & SHF_ALLOC) && (sh.flags & SHF_EXECINSTR)) {
-            VIRT_ADDR lma = elf_pointer + sh.offset;
+            VIRT_ADDR lma = elf_addr + sh.offset;
             VIRT_ADDR vma = sh.addr;
             uint32_t size = sh.size;
-            printk("%p\n", sh.flags);
-            printk("Copying code section %s to its destination ", name);
-            printk("(LMA: %p, VMA: %p)\n", lma, vma);
+            PRINT_DBG("%p\n", sh.flags);
+            PRINT_DBG("Copying code section %s to its destination ", name);
+            PRINT_DBG("(LMA: %p, VMA: %p)\n", lma, vma);
 
-            sched_copyto(pid, lma, size, vma);
+            memcpy(vma, lma, size);
         } else if (sh.flags & SHF_ALLOC) {
-            VIRT_ADDR lma = elf_pointer + sh.offset;
+            VIRT_ADDR lma = elf_addr + sh.offset;
             VIRT_ADDR vma = sh.addr;
-            printk("Allocating space for section %s ", name);
-            printk("(LMA: %p, VMA: %p)\n", lma, vma);
+            PRINT_DBG("Allocating space for section %s ", name);
+            PRINT_DBG("(LMA: %p, VMA: %p)\n", lma, vma);
 
             /* TODO: alloc */
         } else {
-            printk("Skipping section %s\n", name);
+            PRINT_DBG("Skipping section %s\n", name);
         }
     }
     
-    printk("\n");
+    PRINT_DBG("\n");
 
-    printk("Entry point: %p\n", header->entry);
-    printk("Starting process %i...", pid);
+    PRINT_DBG("Entry point: %p\n", header->entry);
 
-    sched_exec(pid, header->entry);
-
-    printk("done.\n");
+    // enter the process
+    PROCESS_MAIN *entry = header->entry;
+    entry(args);
 
     return 0;
 }

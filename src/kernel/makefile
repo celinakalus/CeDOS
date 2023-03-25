@@ -19,8 +19,8 @@ $(DIRS):
 
 .PHONY: build
 build: folder 
-$(GLOBAL_BUILD)/kernel.o: $(OBJECTS) | folder
-> $(LD) $^ -r -o $@ --oformat elf32-i386
+$(GLOBAL_BUILD)/kernel.bin: $(OBJECTS) | folder
+> $(LD) $^ -o $@ -T link.txt -Map=$(LOG_DIR)/kernel_mapfile.txt 
 
 .PHONY: folder
 folder:

@@ -1,8 +1,9 @@
-#include "cedos.h"
+#include "common/cedos.h"
+#include "common/stdio.h"
 
 #include <stdint.h>
 
-void fib(void) {
+void main(char *args) {
     uint32_t a = 0, b = 1, i = 0;
     while (1) {
         uint32_t tmp = a + b;
@@ -12,6 +13,7 @@ void fib(void) {
         i++;
         char c = 0;
         sc_file_read(0, &c, 1);
-        printf("[%c]\n", (int)(uint32_t)c);//yield();
+        if (c == 0x1B) { break; }
+        //printf("[%c]\n", (int)(uint32_t)c);//yield();
     }
 }
