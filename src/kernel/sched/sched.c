@@ -14,6 +14,7 @@
 #include "cedos/elf.h"
 
 #include "assembly.h"
+#include "assert.h"
 
 #define KERNEL_PRIVATE_STACK (void*)(0xC0600000)
 #define USER_STACK (void*)(0xC0000000)
@@ -52,6 +53,11 @@ void entry_idle(char *args) {
  */
 PROCESS_ID sched_spawn(const char *name, char *args) {
     crit_enter();
+
+    if (name != NULL) {
+        int fd = FAT_openat(0, name, 0);
+        if (fd == -1) { return -1; }
+    }
 
     PHYS_ADDR page_dir = create_empty_page_dir();
 
@@ -101,6 +107,8 @@ PROCESS_ID sched_spawn(const char *name, char *args) {
     p->state = PSTATE_READY;
 
     crit_exit();
+
+    return pid;
 }
 
 
@@ -177,6 +185,7 @@ int sched_init(void) {
 
     // create idle process
     PROCESS_ID idle = sched_spawn(NULL, NULL);
+    assert(idle != -1);
 
     return 1;
 }
@@ -225,6 +234,19 @@ int sched_kill(PROCESS_ID pid) {
     return success;
 }
 
+void sched_wait(PROCESS_ID pid) {
+    assert(pid != current_pid);
+
+    if (pid < 0) { return; }
+
+    while (1) {
+        PROCESS *p = get_process(pid);
+        if (p->state == PSTATE_TERMINATED) { break; }
+
+        sched_yield();    
+    }
+}
+
 int sched_start(void) {
     current_pid = 0;
 
@@ -243,7 +265,7 @@ int sched_stop(void) {
 }
 
 int sched_dispatcher(void) {
-    //PRINT_DBG("Dispatching process %i...\n", current_pid);
+    PRINT_DBG("Dispatching process %i...\n", current_pid);
 
     PROCESS* this = get_process(current_pid);
 
@@ -251,10 +273,10 @@ int sched_dispatcher(void) {
     // enter the actual program
     elf_exec(this->name, this->args);
 
-    //PRINT_DBG("Process %i terminated.\n", current_pid);
+    PRINT_DBG("Process %i terminated.\n", current_pid);
 
     sched_kill(current_pid);
 
     // just for absolute safety
-    while (1);
+    kpanic("Executing a terminated process!!\n");
 }

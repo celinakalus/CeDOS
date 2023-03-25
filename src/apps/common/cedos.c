@@ -9,31 +9,36 @@
 }*/
 
 int yield() {
-    int res = 0;
+    volatile uint32_t res = 0;
     interrupt(0x20, res, 0, 0, 0, 0);
     return res;
 }
 
 int get_pid() {
-    int res = 0;
+    volatile uint32_t res = 0;
     interrupt(0x30, res, 3, 0, 0, 0);
     return res;
 }
 
 int sc_file_read(int fd, char *buffer, uint32_t size) {
-    int res = 0;
+    volatile uint32_t res = 0;
     interrupt(0x30, res, 0, fd, buffer, size);
     return res;
 }
 
 int sc_file_write(int fd, char *buffer, uint32_t size) {
-    int res = 0;
+    volatile uint32_t res = 0;
     interrupt(0x30, res, 1, fd, buffer, size);
     return res;
 }
 
 int process_spawn(const char *fname, const char *args) {
-    int res = 0;
+    volatile uint32_t res = 0;
     interrupt(0x30, res, 4, fname, args, 0);
     return res;
+}
+
+void process_wait(int pid) {
+    volatile uint32_t res = 0;
+    interrupt(0x30, res, 5, pid, 0, 0);
 }

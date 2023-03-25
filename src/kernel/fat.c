@@ -184,44 +184,28 @@ uint16_t FAT_next_cluster(uint16_t cluster) {
     }
 }
 
-void *FAT_find_file(const char *fname) {
+int FAT_openat(int fd, const char *fname, int flags) {
     int i = 0;
 
-    void *addr = (void *)(0);
+    // TODO: take fd into consideration (open file in that subdirectory)
+
+    uint16_t first_cluster;
     while (1) {
         char buffer[832];
-        uint16_t first_cluster;
         uint32_t file_size;
 
         i = FAT_root_dir_next(i, buffer, &first_cluster, &file_size);
-        if (i <= 0) { break; }
+        if (i <= 0) { return -1; }
 
         if (strcmp(buffer, fname) == 0) {
             // file found
-            addr = FAT_read_sector_offset(data_lba + ((first_cluster - 2) * boot_sect->sect_per_cluster), NULL);
-            break;
+            return first_cluster;
         }
     }
-
-    return addr;
 }
 
-uint32_t FAT_read_file(const char *fname, void *buffer) {
-    int i = 0;
-
-    uint16_t first_cluster;
-    uint32_t file_size;
-    while (1) {
-        char buffer[832];
-
-        i = FAT_root_dir_next(i, buffer, &first_cluster, &file_size);
-        if (i <= 0) { return 0; }
-
-        if (strcmp(buffer, fname) == 0) { break; }
-    }
-    
-    // copy all clusters
-    uint16_t cluster = first_cluster;
+uint32_t FAT_read(int fd, void *buffer, int count) {
+    uint16_t cluster = fd;
     uint32_t size = 0;
 
     while (1) {

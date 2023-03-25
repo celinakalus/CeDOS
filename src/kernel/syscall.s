@@ -13,6 +13,8 @@ syscall_interrupt:
 
   call *%eax
 
+  mov %eax, (%esi)
+
   // restore stack
   add $12, %esp
   iret

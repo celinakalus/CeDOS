@@ -122,8 +122,9 @@ __attribute__((always_inline)) inline int syscall(int eax, int ebx, int ecx, int
                         "mov %2, %%ebx;"
                         "mov %3, %%ecx;"
                         "mov %4, %%edx;"
+                        "mov %0, %%esi;"
                         "int $0x30;"
-                        "mov %%eax, %0;" : "=m" (res) : "" (eax), "" (ebx), "" (ecx), "" (edx) : "eax", "ebx", "ecx", "edx");
+                        : "=m" (res) : "" (eax), "" (ebx), "" (ecx), "" (edx) : "eax", "ebx", "ecx", "edx");
     return res;
 }
 

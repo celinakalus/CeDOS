@@ -5,7 +5,7 @@
 PROCESS_ID next_schedule(PROCESS_ID current) {
     PROCESS* process = get_process(current);
 
-    if (process != NULL && process->next != NULL) {
+    if (process != NULL && process->next != NULL && process->next->state != PSTATE_TERMINATED) {
         return process->next->id;
     } else {
         PROCESS *first = get_first_process();

@@ -128,7 +128,9 @@ PROCESS_ID elf_exec(const char *fname, char *args) {
     PRINT_DBG("Loading ELF executable \"%s\".\n", fname);
     VIRT_ADDR elf_addr = (VIRT_ADDR*)(0xA0000000);
     // TODO: needs to change when we have other file systems
-    int size = FAT_read_file(fname, elf_addr);
+    int fd = FAT_openat(0, fname, 0);
+    assert(fd != -1);
+    int size = FAT_read(fd, elf_addr, 0);
     assert(size != 0);
 
     ELF_HEADER *header = (ELF_HEADER*)(elf_addr);

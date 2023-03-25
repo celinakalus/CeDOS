@@ -2,10 +2,8 @@
 
 #include <stdint.h>
 
-extern void main(void);
+extern void main(char *args);
 
 int _start(char *args) {
-    main();
-
-    while(1);
+    main(args);
 }

@@ -71,6 +71,12 @@ void sched_yield(void);
 int sched_kill(PROCESS_ID pid);
 
 /*!
+ * Wait for a process to terminate.
+ * \param pid Process ID of the process to wait for.
+ */
+void sched_wait(PROCESS_ID pid);
+
+/*!
  * The scheduler.
  */
 void sched_interrupt_c(SCHED_FRAME * volatile frame, uint32_t volatile ebp);

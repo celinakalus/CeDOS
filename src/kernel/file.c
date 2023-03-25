@@ -4,15 +4,17 @@
 #include "cedos/drivers/keyboard.h"
 
 int file_read(int fd, char *buffer, uint32_t size) {
-    for (int i = 0; i < size; i++) {
+    int i = 0;
+    while (i < size) {
         char table[] = { 
-            0, 0, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '\\', '´', 0x08, 
+            '^', 0x1B, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '\\', '´', 0x08, 
             '\t', 'q', 'w', 'e', 'r', 't', 'z', 'u', 'i', 'o', 'p', 'ü', '+', '\n',
             0, 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'ö', 'ä', '#',
             0, '<', 'y', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '-'};
         uint32_t scancode = std_kb->read();
         char c = scancode >= 0 && scancode <= 60 ? table[scancode] : 0;
-        buffer[i] = c;
+        if (c == 0) { continue; }
+        buffer[i++] = c;
     }
 }
 

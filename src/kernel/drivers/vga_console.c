@@ -112,8 +112,13 @@ int vga_con_init(void) {
 }
 
 void vga_con_write_c(const char c) {
-    write_char(c);
-    set_cursor(line, column);
+    if (c == 0x08) {
+        vga_con_backspace();
+        set_cursor(line, column);
+    } else {
+        write_char(c);
+        set_cursor(line, column);
+    }
 }
 
 void vga_con_write_n(const char *string, uint32_t num) {

@@ -160,6 +160,7 @@ void printk(const char* fmt, ...) {
 }
 
 void kpanic(const char* string) {
+    cli();
     printk(string);
     core_con->write_c('\n');
     // register dump / stack dump
