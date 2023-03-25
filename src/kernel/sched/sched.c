@@ -20,6 +20,12 @@
 
 #define PROCESS_STD_EFLAGS (0x00000286)
 
+#ifdef DEBUG
+#define PRINT_DBG(...) printk("[" __FILE__ "] " __VA_ARGS__)
+#else
+#define PRINT_DBG(...) {}
+#endif
+
 PROCESS* get_slot(void) {
     static PROCESS free_slots[8];
     static uint32_t index = 0;
@@ -37,7 +43,7 @@ int sched_dispatcher(void);
 
 void entry_idle(char *args) {
     while (1) { 
-        //printk("idle.\n"); 
+         
     }
 }
 
@@ -66,6 +72,7 @@ PROCESS_ID sched_spawn(const char *name, char *args) {
     p->args = &(p->args_buf);
 
     PROCESS_ID pid = add_process(p, current_pid);
+    p->id = pid;
 
     // setup stack
     static SCHED_FRAME frame;
@@ -107,12 +114,21 @@ void sched_interrupt_c(SCHED_FRAME * volatile frame, uint32_t volatile ebp) {
         current->eip = frame->eip;
         current->eflags = frame->eflags;
 
+        
+
         // save stack checksum
         stack_compute_checksum(&(current->checksum), current->esp, current->ebp);
     }
 
+    PRINT_DBG("esp: %p\n", current->esp);
+    PRINT_DBG("ebp: %p\n", current->ebp);
+    PRINT_DBG("eip: %p\n", current->eip);
+    PRINT_DBG("eflags: %p\n", current->eflags);
+
     // select next process
+    PRINT_DBG("exiting %i, ", current_pid);
     current_pid = next_schedule(current_pid);
+    PRINT_DBG("entering %i\n", current_pid);
 
     // unblock all blocked processes
     for (PROCESS *p = get_first_process(); p != NULL; p = p->next) {
@@ -140,7 +156,7 @@ void sched_interrupt_c(SCHED_FRAME * volatile frame, uint32_t volatile ebp) {
     ebp = next->ebp;
     //frame->cs = 0x08;
     //frame->eip = next->eip;
-    //frame->eflags = next->eflags;
+    frame->eflags = next->eflags;
     frame->esp = next->esp;
     frame->ebp = next->ebp;
 
@@ -167,7 +183,7 @@ int sched_init(void) {
 
 void sched_yield(void) {
     crit_enter();
-    //printk("yield.\n");
+    //PRINT_DBG("yield.\n");
     PROCESS *current = get_process(current_pid);
     if (current != NULL && current->state != PSTATE_TERMINATED) {
         current->state = PSTATE_READY;
@@ -175,6 +191,7 @@ void sched_yield(void) {
     }
 
     uint32_t csc = crit_stash();
+    sti();
     INT(0x20);
     crit_restore(csc);
 
@@ -226,7 +243,7 @@ int sched_stop(void) {
 }
 
 int sched_dispatcher(void) {
-    //printk("Dispatching process %i...\n", current_pid);
+    //PRINT_DBG("Dispatching process %i...\n", current_pid);
 
     PROCESS* this = get_process(current_pid);
 
@@ -234,7 +251,7 @@ int sched_dispatcher(void) {
     // enter the actual program
     elf_exec(this->name, this->args);
 
-    //printk("Process %i terminated.\n", current_pid);
+    //PRINT_DBG("Process %i terminated.\n", current_pid);
 
     sched_kill(current_pid);
 

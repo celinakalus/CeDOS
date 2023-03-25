@@ -22,6 +22,12 @@
 
 #define BUFFER_LENGTH           (128)
 
+#ifdef DEBUG
+#define PRINT_DBG(...) printk("[" __FILE__ "] " __VA_ARGS__)
+#else
+#define PRINT_DBG(...) {}
+#endif
+
 /*!
  * Initializes the PS/2 keyboard.
  * \return 1 on success, 0 on fail
@@ -98,6 +104,7 @@ int ps2_kb_init(void) {
 
 uint8_t ps2_kb_read(void) {
     while (buffer_empty()) {
+        PRINT_DBG("yield.\n");
         sched_yield();
     }
 
