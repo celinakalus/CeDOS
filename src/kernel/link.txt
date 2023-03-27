@@ -11,7 +11,7 @@ MEMORY
 
 SECTIONS
 {
-  KERNEL : 
+  KERNEL : AT(0x0000)
   {
     */*(.text)
     */*(.data)
@@ -19,9 +19,9 @@ SECTIONS
     
   } >KERNEL_VMA
 
-  REALMD : 
+  REALMD : AT(LOADADDR(KERNEL) + SIZEOF(KERNEL))
   {
-    */*(.text_realmode)
+    */*(.text.realmode)
     
   } >REALMD_VMA
 }

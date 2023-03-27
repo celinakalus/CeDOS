@@ -1,4 +1,4 @@
-.section .text_realmode
+.section .text.realmode
 realmode_int10h:
     push %ebp
     mov %esp, %ebp
