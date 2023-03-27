@@ -55,7 +55,7 @@ PROCESS_ID sched_spawn(const char *name, char *args) {
     crit_enter();
 
     if (name != NULL) {
-        int fd = FAT_openat(0, name, 0);
+        int fd = file_open(name, 0);
         if (fd == -1) { return -1; }
     }
 
