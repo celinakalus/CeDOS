@@ -26,7 +26,7 @@
 #define PRINT_DBG(...) {}
 #endif
 
-extern void realmode_int10h(uint32_t mode);
+extern void realmode_int10h(uint32_t eax, uint32_t ebx, uint32_t ecx);
 
 int os_init(void) {
     core_init();
@@ -68,9 +68,11 @@ int os_init(void) {
     FAT_init();
     printk("done.");
 
-    printk("Testing realmode graphics switch...");
-    realmode_int10h(0x0D);
-    printk("done.\n");*/
+    while (1) {
+        graph[i++] = (i & 0x0F);
+
+        if (i > 320 * 240) { i = 0; }
+    }
 
 
     printk("Initialization finished.\n--------------\n");

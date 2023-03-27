@@ -27,6 +27,6 @@ extern void syscall_interrupt(void);
  * Installs the syscall interrupt to INT 0x30
  */
 int syscall_init(void) {
-    install_interrupt(0x30, &syscall_interrupt, 0x08, INT_GATE);
+    install_interrupt(0x30, &syscall_interrupt, 0x18, INT_GATE);
     return 1;
 }
