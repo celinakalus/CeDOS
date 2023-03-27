@@ -5,6 +5,7 @@ realmode_int10h:
     push %ebp
     mov %esp, %ebp
 
+    pushf
     cli
     
     pusha
@@ -120,8 +121,7 @@ pmode32:
     mov %eax, %esp
 
     popa
-
-    sti
+    popf
     
     # return
     pop %ebp

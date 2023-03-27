@@ -2,6 +2,7 @@
 #include "cedos/core.h"
 #include "cedos/sched/sched.h"
 #include "cedos/file.h"
+#include "cedos/drivers/graphics.h"
 
 void test(uint32_t ebx, uint32_t ecx, uint32_t edx) {
     printk("SYSCALL 0x01: EBX=%i ECX=%X EDX=%X\n", ebx, ecx, edx);
@@ -18,7 +19,8 @@ void* SYSCALL_TABLE[] = {
         get_current_process,
         sched_spawn,
         sched_wait,
-        file_open
+        file_open,
+        graphics_set_mode
     };
 
 extern void syscall_interrupt(void);

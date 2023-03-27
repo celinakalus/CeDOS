@@ -54,3 +54,8 @@ int sc_file_open(char *pathname, int flags) {
     interrupt(0x30, res, 6, pathname, flags, 0);
     return res;
 }
+
+void graphics_set_mode(int mode) {
+    volatile uint32_t res = 0;
+    interrupt(0x30, res, 7, mode, 0, 0);
+}

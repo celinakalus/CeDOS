@@ -11,6 +11,8 @@ int get_pid();
 int process_spawn(const char *fname, const char *args);
 void process_wait(int pid);
 
+void graphics_set_mode(int mode);
+
 int sc_file_read(int fd, char *buffer, uint32_t size);
 int sc_file_write(int fd, char *buffer, uint32_t size);
 int sc_file_openat(int fd, char *buffer, uint32_t size);
