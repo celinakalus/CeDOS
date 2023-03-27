@@ -1,4 +1,5 @@
 .section .text.realmode
+.global realmode_int10h
 realmode_int10h:
     push %ebp
     mov %esp, %ebp
@@ -9,6 +10,9 @@ realmode_int10h:
     push %es
     push %fs
     push %ss
+
+    mov %cr3, %eax
+    push %eax
 
     mov %esp, %eax
     mov %eax, %esi
@@ -24,9 +28,13 @@ realmode_int10h:
     push %esi
     push %edi
 
+    # disable paging
+    xor %eax, %eax
+    mov %eax, %cr3
+
     # switch to realmode temporarily
     mov %cr0, %eax
-    and $0xFFFFFFFE, %eax
+    and $0x3FFFFFFC, %eax
     mov %eax, %cr0
 
     # perform long jump to set code segment
@@ -45,6 +53,9 @@ return_pmode:
     mov %eax, %esp
 
     # restore original segments and registers
+    pop %eax
+    mov %eax, %cr3
+    
     pop %ss
     pop %fs
     pop %es

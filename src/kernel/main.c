@@ -26,6 +26,8 @@
 #define PRINT_DBG(...) {}
 #endif
 
+extern void realmode_int10h(uint32_t mode);
+
 int os_init(void) {
     core_init();
     printk("Core functions initialized.\n");
@@ -65,6 +67,10 @@ int os_init(void) {
     printk("Initializing root file system...");
     FAT_init();
     printk("done.");
+
+    printk("Testing realmode graphics switch...");
+    realmode_int10h(0x0D);
+    printk("done.\n");*/
 
 
     printk("Initialization finished.\n--------------\n");
