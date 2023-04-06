@@ -241,7 +241,7 @@ void sched_wait(PROCESS_ID pid) {
 
     while (1) {
         PROCESS *p = get_process(pid);
-        if (p->state == PSTATE_TERMINATED) { break; }
+        if (p == NULL || p->state == PSTATE_TERMINATED) { break; }
 
         sched_yield();    
     }
