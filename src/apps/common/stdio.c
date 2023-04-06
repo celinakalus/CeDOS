@@ -97,6 +97,12 @@ void print_string(char *str) {
     print(str, length);
 }
 
+int print_hex_char(uint8_t c) {
+    char buffer[2];
+    int size = sprint_hex_char(c, buffer);
+    print(buffer, size);
+}
+
 void print_char(char c) {
     print(&c, 1);
 }
@@ -117,6 +123,8 @@ int printf(const char *fmt, ...) {
             print_uint32(va_arg(args, uint32_t));
         } else if (*fmt == 'i') {
             print_int(va_arg(args, int));
+        } else if (*fmt == 'x') {
+            print_int(va_arg(args, char));
         } else if (*fmt == 'u') {
             print_uint(va_arg(args, unsigned int));
         } else if (*fmt == 'p') {

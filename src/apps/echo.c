@@ -4,5 +4,5 @@
 #include <stdint.h>
 
 void main(char *args) {
-    printf(args);
+    printf("%s\n", args);
 }

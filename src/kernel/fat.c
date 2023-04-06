@@ -188,6 +188,11 @@ int FAT_openat(int fd, const char *fname, int flags) {
     int i = 0;
 
     // TODO: take fd into consideration (open file in that subdirectory)
+    
+    
+    if (!(fd & 0x1000)) { return -1; }
+
+    fd &= 0x0FFF;
 
     uint16_t first_cluster;
     while (1) {
@@ -199,13 +204,15 @@ int FAT_openat(int fd, const char *fname, int flags) {
 
         if (strcmp(buffer, fname) == 0) {
             // file found
-            return first_cluster;
+            return first_cluster | 0x1000;
         }
     }
 }
 
 uint32_t FAT_read(int fd, void *buffer, int count) {
-    uint16_t cluster = fd;
+    if (!(fd & 0x1000)) { return -1; }
+    
+    uint16_t cluster = fd & 0xFFF;
     uint32_t size = 0;
 
     while (1) {

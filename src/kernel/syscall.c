@@ -17,7 +17,8 @@ void* SYSCALL_TABLE[] = {
         sched_yield, 
         get_current_process,
         sched_spawn,
-        sched_wait
+        sched_wait,
+        file_open
     };
 
 extern void syscall_interrupt(void);
