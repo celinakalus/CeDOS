@@ -23,7 +23,7 @@ $(DIRS):
 .PHONY: build
 build: $(APP_OBJECTS)
 $(GLOBAL_BUILD)/%.o: $(LOCAL_BUILD)/%.o $(OBJECTS)
-> $(LD) -T link.txt -Map=$(LOG_DIR)/apps_mapfile.txt -N  $^ -o $@ 
+> $(LD) -T link.txt -Map=$(LOG_DIR)/$(notdir $@)_mapfile.txt -N  $^ -o $@ 
 # > $(OBJCOPY) -I binary -O elf32-i386 $(GLOBAL_BUILD)/apps.o $(GLOBAL_BUILD)/apps_raw.o
 # > $(LD) -T link.txt -r $^ -o $(GLOBAL_BUILD)/apps.o --oformat elf32-i386
 

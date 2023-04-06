@@ -8,7 +8,7 @@ void main(char *args) {
     int i = 0;
 
     while (args[i] != 0) {
-        char c = args[i];
+        uint8_t c = (uint8_t)(args[i]);
         if (c >= 'a' && c <= 'f') {
             c -= 'a';
         } else if (c >= 'A' && c <= 'F') {
@@ -24,6 +24,7 @@ void main(char *args) {
         i++;
     }
 
-    printf("Setting graphics mode %x...\n", mode);
+    printf("Setting graphics mode %i...\n", mode);
+
     graphics_set_mode(mode);
 }

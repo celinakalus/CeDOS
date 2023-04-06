@@ -1,5 +1,7 @@
 #include "cedos/drivers/console.h"
 #include "cedos/drivers/keyboard.h"
+#include "cedos/drivers/graphics.h"
+
 
 #include "cedos/sched/sched.h"
 #include "cedos/sched/process.h"
@@ -65,6 +67,10 @@ int os_init(void) {
 
     printk("Initializing root file system...");
     FAT_init();
+    printk("done.");
+
+    printk("Initializing graphics...");
+    graphics_init();
     printk("done.");
 
 
