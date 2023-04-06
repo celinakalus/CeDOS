@@ -27,4 +27,9 @@ void main(char *args) {
     printf("Setting graphics mode %i...\n", mode);
 
     graphics_set_mode(mode);
+
+    for (int i = 0; i < 320 * 240; i++) {
+        uint8_t *vmem = (uint8_t*)(0xA0000);
+        vmem[i] = (uint8_t)(i);
+    }
 }
