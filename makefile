@@ -52,7 +52,7 @@ LOCAL_BUILD 		:= $(GLOBAL_BUILD)/components
 export CCFLAGS
 export GLOBAL_BUILD
 
-MODULES := boot kernel libcedos apps
+MODULES := boot kernel libcedos shell
 OBJECTS := $(patsubst %,$(LOCAL_BUILD)/%.o,$(MODULES)) $(LOCAL_BUILD)/apps_raw.o
 DIRS := $(LOCAL_BUILD)
 
@@ -70,7 +70,7 @@ $(GLOBAL_BUILD)/fat.img: $(MODULES)
 > mkdir -p ./mnt
 > sudo mount $@ ./mnt
 > sudo cp $(LOCAL_BUILD)/kernel.bin ./mnt
-> sudo cp $(LOCAL_BUILD)/*.o ./mnt
+> sudo cp $(LOCAL_BUILD)/bin/* ./mnt
 > sudo cp ./img-contents/* ./mnt
 > sudo umount ./mnt
 
@@ -100,9 +100,9 @@ kernel:
 libcedos:
 > $(MAKE) GLOBAL_BUILD=$(LOCAL_BUILD) -C src/libcedos build
 
-.PHONY: apps
-apps:
-> $(MAKE) GLOBAL_BUILD=$(LOCAL_BUILD) -C src/apps build
+.PHONY: shell
+shell:
+> $(MAKE) GLOBAL_BUILD=$(LOCAL_BUILD) -C src/shell build
 
 .PHONY: clean
 clean:
