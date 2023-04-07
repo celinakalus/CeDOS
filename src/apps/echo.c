@@ -1,5 +1,5 @@
-#include "common/cedos.h"
-#include "common/stdio.h"
+#include "cedos.h"
+#include "stdio.h"
 
 #include <stdint.h>
 

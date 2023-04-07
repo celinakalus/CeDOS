@@ -4,16 +4,8 @@ LOCAL_BUILD = $(GLOBAL_BUILD)/apps
 
 SRC_DIR := $(shell pwd)
 
-C_SOURCES := $(wildcard common/*.c)
-S_SOURCES := $(wildcard common/*.s)
-
-C_OBJECTS := $(patsubst common/%.c,$(LOCAL_BUILD)/common/%.c.o,$(C_SOURCES))
-S_OBJECTS := $(patsubst common/%.s,$(LOCAL_BUILD)/common/%.s.o,$(S_SOURCES))
-LIB_OBJECTS = $(S_OBJECTS) $(C_OBJECTS)
-
-LIBCEDOS := $(LOCAL_BUILD)/lib/libcedos.a
-
-LDFLAGS += -L$(LOCAL_BUILD)/lib
+CCFLAGS += -I../libcedos/include
+LDFLAGS += -L$(GLOBAL_BUILD)/lib
 LDFLAGS += -lcedos
 
 LDFLAGS += -T link.txt
@@ -21,25 +13,20 @@ LDFLAGS += -Map=$(LOG_DIR)/$(notdir $@)_mapfile.txt
 LDFLAGS += -N
 
 APP_SOURCES := $(wildcard *.c)
-APP_OBJECTS := $(patsubst %.c,$(GLOBAL_BUILD)/%.o,$(APP_SOURCES))
+APP_OBJECTS := $(patsubst %.c,$(GLOBAL_BUILD)/%.o,$(APP_SOURCES)) $(patsubst %.c,$(LOCAL_BUILD)/%.c.o,$(APP_SOURCES))
 
-DIRS := $(sort $(dir $(LIB_OBJECTS) $(APP_OBJECTS) $(LIBCEDOS)))
+DIRS := $(sort $(dir $(APP_OBJECTS)))
 
-$(APP_OBJECTS) $(LIB_OBJECTS) $(LIBCEDOS): | $(DIRS)
+$(APP_OBJECTS): | $(DIRS)
 $(DIRS):
 > $(MKDIR) $(DIRS)
 
 .PHONY: build
-build: $(APP_OBJECTS) $(LIBCEDOS)
+build: $(APP_OBJECTS)
 $(GLOBAL_BUILD)/%.o: $(LOCAL_BUILD)/%.c.o | $(LIBCEDOS)
 > $(LD) $^ $(LDFLAGS) -o $@ 
-# > $(OBJCOPY) -I binary -O elf32-i386 $(GLOBAL_BUILD)/apps.o $(GLOBAL_BUILD)/apps_raw.o
-# > $(LD) -T link.txt -r $^ -o $(GLOBAL_BUILD)/apps.o --oformat elf32-i386
 
-$(LIBCEDOS): $(LIB_OBJECTS)
-> $(AR) rcs $@ $^
-
-$(LOCAL_BUILD)/%.s.o: %.s
+$(LOCAL_BUILD)/%.c.o: %.s
 > $(AS) -o $@ $<
 
 $(LOCAL_BUILD)/%.c.o: %.c $(wildcard *.h)

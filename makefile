@@ -52,7 +52,7 @@ LOCAL_BUILD 		:= $(GLOBAL_BUILD)/components
 export CCFLAGS
 export GLOBAL_BUILD
 
-MODULES := boot kernel apps
+MODULES := boot kernel libcedos apps
 OBJECTS := $(patsubst %,$(LOCAL_BUILD)/%.o,$(MODULES)) $(LOCAL_BUILD)/apps_raw.o
 DIRS := $(LOCAL_BUILD)
 
@@ -95,6 +95,10 @@ boot:
 .PHONY: kernel
 kernel:
 > $(MAKE) GLOBAL_BUILD=$(LOCAL_BUILD) -C src/kernel $(LOCAL_BUILD)/kernel.bin
+
+.PHONY: libcedos
+libcedos:
+> $(MAKE) GLOBAL_BUILD=$(LOCAL_BUILD) -C src/libcedos build
 
 .PHONY: apps
 apps:
