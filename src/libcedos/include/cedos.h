@@ -17,5 +17,7 @@ int sc_file_read(int fd, char *buffer, uint32_t size);
 int sc_file_write(int fd, char *buffer, uint32_t size);
 int sc_file_openat(int fd, char *buffer, uint32_t size);
 
+void hard_reset();
+
 
 #endif

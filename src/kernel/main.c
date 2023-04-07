@@ -67,11 +67,11 @@ int os_init(void) {
 
     printk("Initializing root file system...");
     FAT_init();
-    printk("done.");
+    printk("done.\n");
 
     printk("Initializing graphics...");
     graphics_init();
-    printk("done.");
+    printk("done.\n");
 
 
     printk("Initialization finished.\n--------------\n");

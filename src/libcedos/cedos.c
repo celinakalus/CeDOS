@@ -59,3 +59,8 @@ void graphics_set_mode(int mode) {
     volatile uint32_t res = 0;
     interrupt(0x30, res, 7, mode, 0, 0);
 }
+
+void hard_reset() {
+    volatile uint32_t res = 0;
+    interrupt(0x30, res, 8, 0, 0, 0);
+}

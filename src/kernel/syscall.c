@@ -20,7 +20,8 @@ void* SYSCALL_TABLE[] = {
         sched_spawn,
         sched_wait,
         file_open,
-        graphics_set_mode
+        graphics_set_mode,
+        hard_reset
     };
 
 extern void syscall_interrupt(void);
