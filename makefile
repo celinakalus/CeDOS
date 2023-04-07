@@ -13,6 +13,7 @@ export CROSS_COMP	:= $(HOME)/opt/cross/bin/i686-elf-
 export CC 		:= $(CROSS_COMP)gcc
 export LD 		:= $(CROSS_COMP)ld
 export AS 		:= $(CROSS_COMP)as
+export AR 		:= $(CROSS_COMP)ar
 export OBJCOPY 	:= $(CROSS_COMP)objcopy
 export OBJDUMP 	:= $(CROSS_COMP)objdump
 
