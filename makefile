@@ -70,6 +70,7 @@ $(GLOBAL_BUILD)/fat.img: $(MODULES)
 > sudo mount $@ ./mnt
 > sudo cp $(LOCAL_BUILD)/kernel.bin ./mnt
 > sudo cp $(LOCAL_BUILD)/*.o ./mnt
+> sudo cp ./img-contents/* ./mnt
 > sudo umount ./mnt
 
 $(GLOBAL_BUILD)/cedos.img: $(GLOBAL_BUILD)/fat.img | $(MODULES) 

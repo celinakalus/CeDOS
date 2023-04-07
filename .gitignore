@@ -4,5 +4,6 @@ docs/*
 *.img
 *.o
 *.bin
+img-contents/*
 
 .vscode
