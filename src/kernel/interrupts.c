@@ -65,17 +65,17 @@ struct {
 int interrupts_init(void) {
     for (uint32_t i = 0; i < INTERRUPT_COUNT; i++) {
         if (i == 0x03) {
-            install_interrupt(i, breakpoint_isr, 0x08, INT_GATE);
+            install_interrupt(i, breakpoint_isr, 0x18, INT_GATE);
         } else if (i == 0x08) {
-            install_interrupt(i, double_fault_isr, 0x08, INT_GATE);
+            install_interrupt(i, double_fault_isr, 0x18, INT_GATE);
         } else if (i == 0x0d) {
-            install_interrupt(i, gpf_isr, 0x08, INT_GATE);
+            install_interrupt(i, gpf_isr, 0x18, INT_GATE);
         } else if (i >= 0x21 || i < 0x28) {
-            install_interrupt(i, pic1_handler, 0x08, INT_GATE);
+            install_interrupt(i, pic1_handler, 0x18, INT_GATE);
         } else if (i >= 0x28 || i < 0x30) {
-            install_interrupt(i, pic2_handler, 0x08, INT_GATE);
+            install_interrupt(i, pic2_handler, 0x18, INT_GATE);
         } else {
-            install_interrupt(i, default_isr, 0x08, INT_GATE);
+            install_interrupt(i, default_isr, 0x18, INT_GATE);
         }
     }
     

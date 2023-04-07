@@ -1,9 +1,9 @@
-#include "common/cedos.h"
-#include "common/stdio.h"
+#include "cedos.h"
+#include "stdio.h"
 
 #include <stdint.h>
 
-void read_line(char *buffer) {
+int read_line(char *buffer) {
     int i = 0;
     char c;
     buffer[0] = 0;
@@ -25,22 +25,41 @@ void read_line(char *buffer) {
 
     buffer[i] = 0;
     sc_file_write(0, &c, 1);
+
+    return i;
 }
 
 void main(char *args) {
     uint32_t a = 0, b = 1, i = 0;
     printf("\n");
-    printf("CeDOS shell\n");
+    printf("ShELF shell interface for CeDOS\n");
+    printf("Version: " VERSION "\n");
 
     while (1) {
         printf("/> ");
 
         char buffer[256];
-        read_line(buffer);
+        int length = read_line(buffer);
+
+        if (length == 0) { continue; }
+
+        char *file = buffer;
+        char *args = (char *)(0);
+
+        int i = 0;
+        while (1) {
+            if (buffer[i] == ' ') {
+                buffer[i] = 0;
+                args = &(buffer[i+1]);
+                break;
+            }
+
+            i++;
+        }
 
         //printf("Executing %s...\n", buffer);
 
-        int pid = process_spawn(buffer, "Hello, world!\n");
+        int pid = process_spawn(file, args);
 
         //printf("Child process %i spawned, waiting for termination...\n", pid);
 

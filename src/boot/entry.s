@@ -158,13 +158,13 @@ bl_loaded:
   mov %eax, %cr0
 
   # perform long jump to set code segment
-  ljmp $0x8, $protected
+  ljmp $0x18, $protected
 
 
 .code32
 protected:
   # setup registers with appropriate GDT values
-  mov $0x10, %eax
+  mov $0x20, %eax
   mov %eax, %ds
   mov %eax, %es
   mov %eax, %fs
@@ -186,7 +186,7 @@ protected:
   movl %eax, %cr0
 
   # jump to kernel code
-  ljmp $8, $0xC0000000
+  ljmp $0x18, $0xC0000000
 
   # loop until the heat death of the universe
 loop:
@@ -227,7 +227,7 @@ disabled_msg:
   .byte 0
 
 GDT_DESCRIPTOR:
-  .word 0x23
+  .word 0x39
   .int GDT
 
 IDT_DESCRIPTOR:

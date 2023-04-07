@@ -38,6 +38,6 @@ typedef struct {
 /*!
  * The GDT.
  */
-GDT_ENTRY GDT[5];
+GDT_ENTRY GDT[7];
 
 #endif

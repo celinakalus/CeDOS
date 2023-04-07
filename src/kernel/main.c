@@ -1,5 +1,7 @@
 #include "cedos/drivers/console.h"
 #include "cedos/drivers/keyboard.h"
+#include "cedos/drivers/graphics.h"
+
 
 #include "cedos/sched/sched.h"
 #include "cedos/sched/process.h"
@@ -25,6 +27,7 @@
 #else
 #define PRINT_DBG(...) {}
 #endif
+
 
 int os_init(void) {
     core_init();
@@ -61,6 +64,14 @@ int os_init(void) {
     printk("Initializing keyboard...");
     ps2_kb.init();
     printk("done.\n");
+
+    printk("Initializing root file system...");
+    FAT_init();
+    printk("done.");
+
+    printk("Initializing graphics...");
+    graphics_init();
+    printk("done.");
 
 
     printk("Initialization finished.\n--------------\n");
@@ -143,41 +154,11 @@ int sysinit(void) {
 int os_main(void) {
     infodump();
 
-    FAT_init();
-
-    int i = 0;
-
-    while (1) {
-        char buffer[832];
-        uint16_t first_cluster;
-        uint32_t file_size;
-
-        i = FAT_root_dir_next(i, buffer, &first_cluster, &file_size);
-        if (i <= 0) { break; }
-
-        PRINT_DBG("%s (start: %i, size: %i)\n", buffer, first_cluster, file_size);
-
-        uint16_t cluster = first_cluster;
-
-        if (cluster == 0xFFF || cluster == 0x000) { continue; }
-
-        PRINT_DBG("  clusters: \n");
-        while (1) {
-            PRINT_DBG("    %x\n", cluster);
-
-            //char *sect = FAT_read_cluster(cluster);
-            //hexdump(sect, 512 * 8);
-
-            cluster = FAT_next_cluster(cluster);
-            if (cluster == 0xFFF || cluster == 0x000) { break; }
-        }
-    }
-
     // create test tasks
     printk("Creating tasks.\n");
     
     
-    int pid = sched_spawn("shell.o", "Hello World!");
+    int pid = sched_spawn("shelf", "Hello World!");
     assert(pid != -1);
     //sched_spawn("fibonacci.o", "Hello World!");
     //sched_spawn("fibonacci.o", "Hello World!");

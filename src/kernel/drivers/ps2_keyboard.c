@@ -95,7 +95,7 @@ int ps2_kb_init(void) {
     nop(); nop(); nop(); nop();
     outb(conf, PS2_DATA);
 
-    install_interrupt(PIC1_IRQ(0x01), keyboard_int_handler, 0x08, INT_GATE);
+    install_interrupt(PIC1_IRQ(0x01), keyboard_int_handler, 0x18, INT_GATE);
 
     pic_unmask_interrupt(0x01);
 

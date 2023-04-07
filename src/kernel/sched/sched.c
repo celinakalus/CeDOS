@@ -55,7 +55,7 @@ PROCESS_ID sched_spawn(const char *name, char *args) {
     crit_enter();
 
     if (name != NULL) {
-        int fd = FAT_openat(0, name, 0);
+        int fd = file_open(name, 0);
         if (fd == -1) { return -1; }
     }
 
@@ -87,7 +87,7 @@ PROCESS_ID sched_spawn(const char *name, char *args) {
     frame.ebp = p->ebp;
     frame.esp = p->esp;
     frame.eflags = p->eflags;
-    frame.cs = 0x8;
+    frame.cs = 0x18;
 
     if (name == NULL) {
         frame.eip = entry_idle;
@@ -179,7 +179,7 @@ extern void* sched_interrupt;
 
 int sched_init(void) {
     // install scheduler interrupt
-    install_interrupt(PIC1_IRQ(0x00), &sched_interrupt, 0x08, INT_GATE);
+    install_interrupt(PIC1_IRQ(0x00), &sched_interrupt, 0x18, INT_GATE);
 
     current_pid = 0;
 
@@ -241,7 +241,7 @@ void sched_wait(PROCESS_ID pid) {
 
     while (1) {
         PROCESS *p = get_process(pid);
-        if (p->state == PSTATE_TERMINATED) { break; }
+        if (p == NULL || p->state == PSTATE_TERMINATED) { break; }
 
         sched_yield();    
     }

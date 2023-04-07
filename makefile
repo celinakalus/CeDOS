@@ -13,6 +13,7 @@ export CROSS_COMP	:= $(HOME)/opt/cross/bin/i686-elf-
 export CC 		:= $(CROSS_COMP)gcc
 export LD 		:= $(CROSS_COMP)ld
 export AS 		:= $(CROSS_COMP)as
+export AR 		:= $(CROSS_COMP)ar
 export OBJCOPY 	:= $(CROSS_COMP)objcopy
 export OBJDUMP 	:= $(CROSS_COMP)objdump
 
@@ -51,7 +52,7 @@ LOCAL_BUILD 		:= $(GLOBAL_BUILD)/components
 export CCFLAGS
 export GLOBAL_BUILD
 
-MODULES := boot kernel apps
+MODULES := boot kernel libcedos shell
 OBJECTS := $(patsubst %,$(LOCAL_BUILD)/%.o,$(MODULES)) $(LOCAL_BUILD)/apps_raw.o
 DIRS := $(LOCAL_BUILD)
 
@@ -69,7 +70,8 @@ $(GLOBAL_BUILD)/fat.img: $(MODULES)
 > mkdir -p ./mnt
 > sudo mount $@ ./mnt
 > sudo cp $(LOCAL_BUILD)/kernel.bin ./mnt
-> sudo cp $(LOCAL_BUILD)/*.o ./mnt
+> sudo cp $(LOCAL_BUILD)/bin/* ./mnt
+> sudo cp ./img-contents/* ./mnt
 > sudo umount ./mnt
 
 $(GLOBAL_BUILD)/cedos.img: $(GLOBAL_BUILD)/fat.img | $(MODULES) 
@@ -94,9 +96,13 @@ boot:
 kernel:
 > $(MAKE) GLOBAL_BUILD=$(LOCAL_BUILD) -C src/kernel $(LOCAL_BUILD)/kernel.bin
 
-.PHONY: apps
-apps:
-> $(MAKE) GLOBAL_BUILD=$(LOCAL_BUILD) -C src/apps build
+.PHONY: libcedos
+libcedos:
+> $(MAKE) GLOBAL_BUILD=$(LOCAL_BUILD) -C src/libcedos build
+
+.PHONY: shell
+shell:
+> $(MAKE) GLOBAL_BUILD=$(LOCAL_BUILD) -C src/shell build
 
 .PHONY: clean
 clean:
