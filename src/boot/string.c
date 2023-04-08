@@ -29,7 +29,9 @@ void *memcpy(void *_dest, const void *_src, uint32_t n) {
     uint8_t *src = (uint8_t*)(_src);
     uint8_t *dest = (uint8_t*)(_dest);
 
-    for (int i = 0; i < n; i++) {
+    for (uint32_t i = 0; i < n; i++) {
         dest[i] = src[i];
     }
+
+    return _dest;
 }
