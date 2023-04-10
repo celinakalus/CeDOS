@@ -10,6 +10,9 @@ realmode_int10h:
     
     pusha
 
+    # preserve protected mode IDT
+    sidtl (pmode_IDT)
+
     mov %esp, %eax
     mov %eax, %esi
 
@@ -58,7 +61,6 @@ pmode16:
     movw %ax, %fs
 
     # load real mode interrupt descriptor table
-    sidt (pmode_IDT)
     lidt (realmode_IDT)
 
     # switch to real mode
@@ -86,7 +88,7 @@ realmode:
 
     cli
 
-    lidt (pmode_IDT)
+    lidtl (pmode_IDT)
 
     mov %cr0, %eax
     or $0x00000001, %eax
