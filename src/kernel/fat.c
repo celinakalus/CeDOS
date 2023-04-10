@@ -52,10 +52,9 @@ uint32_t FAT2_lba;
 uint32_t root_lba;
 uint32_t data_lba;
 
-void *FAT_init() {
+void FAT_init() {
     const int sector_size = 512;
     const int sector_num = 128;
-    const int part_size = sector_size * sector_num;
 
     // open image file
     FAT_addr = (void*)(0x10000);
@@ -109,7 +108,7 @@ int FAT_root_dir_next(int index, char *fname_buffer, uint16_t *first_cluster, ui
         }
 
         // deleted file
-        if (dir_entry->name[0] == 0xE5) {
+        if (dir_entry->name[0] == (char)(0xE5)) {
             index++;
             continue;
         }
@@ -169,9 +168,9 @@ int FAT_root_dir_next(int index, char *fname_buffer, uint16_t *first_cluster, ui
 
 uint16_t FAT_next_cluster(uint16_t cluster) {
     // assuming FAT12
-    int offset = (cluster >> 1) * 3;
+    uint32_t *offset = (cluster >> 1) * 3;
     uint8_t *sect = FAT_read_sector_offset(FAT1_lba, &offset);
-    sect += offset;
+    sect += (uint32_t)(offset);
 
     if (cluster & 0x01) {
         uint16_t high = (uint16_t)(sect[2]);

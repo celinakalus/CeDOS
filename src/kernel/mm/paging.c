@@ -66,8 +66,6 @@ void mount_page_dir(PHYS_ADDR page_dir) {
 int force_map_page_to(PHYS_ADDR page_addr, uint32_t dir_index, uint32_t table_index, uint32_t flags) {
     PAGE_DIR_ENTRY* page_dir = PAGE_DIR_ALT_MAPPED_ADDR;
     PAGE_TABLE_ENTRY* page_table = PAGE_TABLE_ALT_MAPPED_ADDR(dir_index);
-    
-    int tmp = 0;
 
     if (!is_present(page_dir[dir_index])) {
         // acquire new page table
@@ -83,7 +81,7 @@ int force_map_page_to(PHYS_ADDR page_addr, uint32_t dir_index, uint32_t table_in
 
 int map_page_to(PHYS_ADDR page_addr, uint32_t dir_index, uint32_t table_index, uint32_t flags) {
     if (is_addr_available(dir_index, table_index)) {
-        force_map_page_to(page_addr, dir_index, table_index, flags);
+        return force_map_page_to(page_addr, dir_index, table_index, flags);
     } else {
         return 0;
     }
@@ -107,14 +105,14 @@ int force_map_page_to_this(PHYS_ADDR page_addr, uint32_t dir_index, uint32_t tab
 
 int map_page_to_this(PHYS_ADDR page_addr, uint32_t dir_index, uint32_t table_index, uint32_t flags) {
     if (is_addr_available(dir_index, table_index)) {
-        force_map_page_to_this(page_addr, dir_index, table_index, flags);
+        return force_map_page_to_this(page_addr, dir_index, table_index, flags);
     } else {
         return 0;
     }
 }
 
 size_t copy_to_pdir(VIRT_ADDR src, size_t length, PHYS_ADDR pdir, VIRT_ADDR dest) {
-    VIRT_ADDR mount_dest = 0xe0000000;
+    VIRT_ADDR mount_dest = (VIRT_ADDR)(0xe0000000);
     mount_page_dir(pdir);
     PHYS_ADDR page;
 
@@ -136,6 +134,8 @@ size_t copy_to_pdir(VIRT_ADDR src, size_t length, PHYS_ADDR pdir, VIRT_ADDR dest
         src += part_length;
         length -= part_length;
     }
+
+    return dest;
 }
 
 int map_range_to(PHYS_ADDR page_dir, VIRT_ADDR dest, PHYS_ADDR src, uint32_t page_count, uint32_t flags) {
@@ -210,4 +210,5 @@ EXCEPTION(page_fault_isr, frame, error_code) {
 
 int paging_init(void) {
     install_interrupt(0x0e, page_fault_isr, 0x18, TRAP_GATE);
+    return 0;
 }

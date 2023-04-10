@@ -112,9 +112,8 @@ void elf_infodump(VIRT_ADDR elf_pointer, uint32_t size) {
 
     for (int i = 0; i < num_sections; i++) {
         SECT_HEADER sh = sect_headers[i];
-        char *name = (char*)(sect_names_addr + sh.name);
-
-        PRINT_DBG("Section:       %s\n", name);
+        
+        PRINT_DBG("Section:       %s\n", (char*)(sect_names_addr + sh.name));
         PRINT_DBG("- type:        %i\n", sh.type);
         PRINT_DBG("- offset:      %i\n", sh.offset);
         PRINT_DBG("- size:        %i\n", sh.size);
@@ -125,6 +124,7 @@ void elf_infodump(VIRT_ADDR elf_pointer, uint32_t size) {
 }
 
 PROCESS_ID elf_exec(const char *fname, char *args) {
+    crit_enter();
     PRINT_DBG("Loading ELF executable \"%s\".\n", fname);
     VIRT_ADDR elf_addr = (VIRT_ADDR*)(0xA0000000);
     // TODO: needs to change when we have other file systems
@@ -183,9 +183,10 @@ PROCESS_ID elf_exec(const char *fname, char *args) {
     PRINT_DBG("\n");
 
     PRINT_DBG("Entry point: %p\n", header->entry);
+    crit_exit();
 
     // enter the process
-    PROCESS_MAIN *entry = header->entry;
+    PROCESS_MAIN *entry = (PROCESS_MAIN*)(header->entry);
     entry(args);
 
     return 0;

@@ -116,41 +116,6 @@ void tasktree(PROCESS_ID pid) {
     }
 }
 
-int sysinit(void) {
-    uint8_t scancode = 0;
-
-    memdump((VIRT_ADDR)0x10000000, 0x3000);
-
-    //syscall(0, 0xCAFEBABE, 0xDEADBEEF, 0x42069420);
-
-    printk("PRESS ENTER:");
-
-    do {
-        scancode = ps2_kb.read();
-        printk("%c", scancode);
-    } while (scancode != 0x1C);
-
-    printk("THANKS, NOW PRESS ESC TO EXIT:");
-
-    do {
-        scancode = ps2_kb.read();
-        printk("%c", scancode);
-    } while (scancode != 0x01);
-
-    syscall(1, 0, 0, 0);
-    
-    //while (1) {
-    //    printk("x");
-    //    hlt();
-    //}
-
-    //sched_exec(create_empty_page_dir(), fibonacci, "fibonacci");
-    //sched_exec(create_empty_page_dir(), node, "node");
-    //while (get_process_count() < 5) { sched_yield(); }
-    //tasktree(1);
-    printk("Terminating.\n");
-}
-
 int os_main(void) {
     infodump();
 

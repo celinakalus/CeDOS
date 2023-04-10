@@ -64,7 +64,7 @@ void memdump(void* start, uint32_t size) {
         for (int j = 0; j < 0x10; j++) {
             uint8_t* p = (uint8_t*)(i | j);
             
-            if (p >= start && p < (start + size)) {
+            if (p >= (uint8_t*)(start) && p < (uint8_t*)(start + size)) {
                 printk_hex_char(*p);
                 core_con->write_c(' ');
             } else {
@@ -114,7 +114,6 @@ void printk(const char* fmt, ...) {
     crit_enter();
     va_list args;
     va_start(args, fmt);
-    uint32_t index = 0;
 
     enum {
         STATE_DEFAULT,
@@ -163,6 +162,18 @@ void kpanic(const char* string) {
     cli();
     printk(string);
     core_con->write_c('\n');
+    // register dump / stack dump
+    regdump();
+    stackdump();
+    while (1) {}
+}
+
+void kfault(const char* string, INTERRUPT_FRAME *frame, uint16_t err_code) {
+    cli();
+    printk("%s\n", string);
+    printk("EIP:     %p\n", frame->eip);
+    printk("CS:      %p\n", frame->cs);
+    printk("EFLAGS:  %p\n", frame->eflags);
     // register dump / stack dump
     regdump();
     stackdump();

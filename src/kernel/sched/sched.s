@@ -15,6 +15,7 @@ sched_interrupt:
   // pass process stack as arguments
   push %ebx
   push %eax
+  xor %eax, %eax
   call sched_interrupt_c
   pop %eax
   pop %ebx
