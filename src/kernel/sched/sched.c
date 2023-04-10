@@ -12,6 +12,7 @@
 #include "cedos/pit.h"
 #include "cedos/pic.h"
 #include "cedos/elf.h"
+#include "cedos/file.h"
 
 #include "assembly.h"
 #include "assert.h"
@@ -44,7 +45,7 @@ int sched_dispatcher(void);
 
 void entry_idle(char *args) {
     while (1) { 
-         
+        hlt();
     }
 }
 
@@ -68,14 +69,14 @@ PROCESS_ID sched_spawn(const char *name, char *args) {
     p->ebp = USER_STACK;
     p->esp = USER_STACK - sizeof(SCHED_FRAME);
     p->eflags = PROCESS_STD_EFLAGS;
-    p->entry = 0xDEADBEEF;
+    p->entry = (PROCESS_MAIN*)(0xDEADBEEF);
     
     // TODO: implement with malloc
     strcpy(p->name_buf, name);
     strcpy(p->args_buf, args);
 
-    p->name = &(p->name_buf);
-    p->args = &(p->args_buf);
+    p->name = (const char*)&(p->name_buf);
+    p->args = (const char*)&(p->args_buf);
 
     PROCESS_ID pid = add_process(p, current_pid);
     p->id = pid;
@@ -84,15 +85,15 @@ PROCESS_ID sched_spawn(const char *name, char *args) {
     static SCHED_FRAME frame;
     frame.eax = frame.ebx = frame.ecx = frame.edx = 0;
     frame.esi = frame.edi = 0;
-    frame.ebp = p->ebp;
-    frame.esp = p->esp;
+    frame.ebp = (uint32_t)(p->ebp);
+    frame.esp = (uint32_t)(p->esp);
     frame.eflags = p->eflags;
     frame.cs = 0x18;
 
     if (name == NULL) {
-        frame.eip = entry_idle;
+        frame.eip = (uint32_t)(entry_idle);
     } else {
-        frame.eip = sched_dispatcher;
+        frame.eip = (uint32_t)(sched_dispatcher);
     }
 
     // load stack
@@ -117,9 +118,9 @@ void sched_interrupt_c(SCHED_FRAME * volatile frame, uint32_t volatile ebp) {
     PROCESS* current = get_process(current_pid);
 
     if (current_pid != 0) {
-        current->esp = (uint32_t)frame;
-        current->ebp = ebp;
-        current->eip = frame->eip;
+        current->esp = (VIRT_ADDR)(frame);
+        current->ebp = (VIRT_ADDR)(ebp);
+        current->eip = (VIRT_ADDR)frame->eip;
         current->eflags = frame->eflags;
 
         
@@ -155,18 +156,18 @@ void sched_interrupt_c(SCHED_FRAME * volatile frame, uint32_t volatile ebp) {
     // check stack
     if (stack_compare_checksum(&(next->checksum), &(checksum))) {
         printk("STACK DAMAGED: PROCESS %i (%s), ESP %X, EBP %X\n", current_pid, get_process(current_pid)->name, next->esp, next->ebp);
-        memdump((void*)(next->esp), (void*)(next->ebp - next->esp));
+        memdump((void*)(next->esp), (void*)((uint32_t)(next->ebp) - (uint32_t)(next->esp)));
         kpanic("CRITICAL STACK DAMAGE");
     }
 
     // prepare stack
     frame = (volatile SCHED_FRAME*)(next->esp);
     ebp = next->ebp;
-    //frame->cs = 0x08;
-    //frame->eip = next->eip;
-    frame->eflags = next->eflags;
-    frame->esp = next->esp;
-    frame->ebp = next->ebp;
+    /*frame->cs = 0x08;
+    frame->eip = next->eip;
+    frame->eflags = (uint32_t)(next->eflags);
+    frame->esp = (uint32_t)(next->esp);
+    frame->ebp = (uint32_t)(next->ebp);*/
 
 
     // reset the timer
@@ -237,8 +238,6 @@ int sched_kill(PROCESS_ID pid) {
 void sched_wait(PROCESS_ID pid) {
     assert(pid != current_pid);
 
-    if (pid < 0) { return; }
-
     while (1) {
         PROCESS *p = get_process(pid);
         if (p == NULL || p->state == PSTATE_TERMINATED) { break; }
@@ -253,6 +252,8 @@ int sched_start(void) {
     // perform the first timer interrupt manually
     pic_unmask_interrupt(0);
     INT(0x20);
+
+    return 0;
 }
 
 int sched_stop(void) {
@@ -262,6 +263,8 @@ int sched_stop(void) {
 
     // disable interrupts
     pic_mask_interrupt(0);
+
+    return 0;
 }
 
 int sched_dispatcher(void) {
@@ -279,4 +282,6 @@ int sched_dispatcher(void) {
 
     // just for absolute safety
     kpanic("Executing a terminated process!!\n");
+
+    return 0;
 }
