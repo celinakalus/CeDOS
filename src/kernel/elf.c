@@ -129,7 +129,10 @@ PROCESS_ID elf_exec(const char *fname, char *args) {
     VIRT_ADDR elf_addr = (VIRT_ADDR*)(0xA0000000);
     // TODO: needs to change when we have other file systems
     int fd = file_open(fname, 0);
-    assert(fd != -1);
+    if (fd == -1) {
+        printk("Executable file not found: %s\n", fname);
+        return -1;
+    }
     int size = file_read(fd, elf_addr, 0);
     assert(size != 0);
 

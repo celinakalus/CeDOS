@@ -19,5 +19,7 @@ int sc_file_openat(int fd, char *buffer, uint32_t size);
 
 void hard_reset();
 
+int dir_next(int fd, int index, char *fname_buffer);
+
 
 #endif

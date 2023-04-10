@@ -64,3 +64,10 @@ void hard_reset() {
     volatile uint32_t res = 0;
     interrupt(0x30, res, 8, 0, 0, 0);
 }
+
+int dir_next(int fd, int index, char *fname_buffer) {
+    void *pointer = (void*)(0);
+    volatile uint32_t res = 0;
+    interrupt(0x30, res, 9, fd, index, fname_buffer);
+    return res;
+}

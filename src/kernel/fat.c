@@ -90,7 +90,7 @@ void *FAT_read_cluster(uint16_t cluster, void *buffer) {
 }
 
 int FAT_root_dir_next(int index, char *fname_buffer, uint16_t *first_cluster, uint32_t *file_size) {
-    memset(fname_buffer, 0, sizeof(fname_buffer));
+    //memset(fname_buffer, 0, sizeof(fname_buffer));
 
     while (1) {
         // index overflow
@@ -137,7 +137,9 @@ int FAT_root_dir_next(int index, char *fname_buffer, uint16_t *first_cluster, ui
         }
 
         if (index == 0 && (dir_entry->file_attr & 0x08) && dir_entry->file_size == 0) {
-        // volume label
+            // volume label
+            index++;
+            continue;
 
         } else if ((dir_entry->file_attr & 0x10) && dir_entry->file_size == 0) {
         // subdirectory
@@ -163,6 +165,17 @@ int FAT_root_dir_next(int index, char *fname_buffer, uint16_t *first_cluster, ui
         }
 
         return index + 1;
+    }
+}
+
+int FAT_dir_next(int fd, int index, char *fname_buffer) {
+    uint16_t first_cluster;
+    uint32_t file_size;
+
+    if (fd == 0x1000) {
+        return FAT_root_dir_next(index, fname_buffer, &first_cluster, &file_size);
+    } else {
+        return -1;
     }
 }
 

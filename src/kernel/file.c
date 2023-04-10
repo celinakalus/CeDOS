@@ -49,3 +49,11 @@ int file_write(int fd, char *buffer, uint32_t size) {
     }
     return size;
 }
+
+int file_dir_next(int fd, int index, char *fname_buffer) {
+    if (fd & 0x1000) {
+        return FAT_dir_next(fd, index, fname_buffer);
+    } else {
+        return -1;
+    }
+}
