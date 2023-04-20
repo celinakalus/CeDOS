@@ -16,6 +16,7 @@
 
 #include "cedos/elf.h"
 
+#include "cedos/file.h"
 #include "cedos/fat.h"
 
 #include "linker.h"
@@ -65,7 +66,11 @@ int os_init(void) {
     ps2_kb.init();
     printk("done.\n");
 
-    printk("Initializing root file system...");
+    printk("Initializing files...");
+    file_init();
+    printk("done.\n");
+
+    printk("Initializing FAT file system...");
     FAT_init();
     printk("done.\n");
 

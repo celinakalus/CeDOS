@@ -1,5 +1,8 @@
 #include "cedos/fat.h"
+#include "cedos/file.h"
 #include "string.h"
+#include "assert.h"
+
 #include <stdint.h>
 
 typedef struct {
@@ -196,15 +199,11 @@ uint16_t FAT_next_cluster(uint16_t cluster) {
     }
 }
 
-int FAT_openat(int fd, const char *fname, int flags) {
+int FAT_openat(FILE *root, FILE *handle, const char *fname, int flags) {
     int i = 0;
 
     // TODO: take fd into consideration (open file in that subdirectory)
-    
-    
-    if (!(fd & 0x1000)) { return -1; }
-
-    fd &= 0x0FFF;
+    assert(root->type == FILE_FAT);
 
     uint16_t first_cluster;
     while (1) {
@@ -216,15 +215,17 @@ int FAT_openat(int fd, const char *fname, int flags) {
 
         if (strcmp(buffer, fname) == 0) {
             // file found
-            return first_cluster | 0x1000;
+            handle->type = FILE_FAT;
+            handle->fat_cluster = first_cluster;
+            return 0;
         }
     }
 }
 
-uint32_t FAT_read(int fd, void *buffer, int count) {
-    if (!(fd & 0x1000)) { return -1; }
+uint32_t FAT_read(FILE *file, void *buffer, int count) {
+    assert(file->type == FILE_FAT);
     
-    uint16_t cluster = fd & 0xFFF;
+    uint16_t cluster = file->fat_cluster;
     uint32_t size = 0;
 
     while (1) {

@@ -112,7 +112,7 @@ clean:
 
 .PHONY: run
 run:
-> ./run.sh
+> ./run.sh $(GLOBAL_BUILD)/cedos.img
 
 .PHONY: docs
 docs:
