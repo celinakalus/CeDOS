@@ -3,6 +3,7 @@
 #include "cedos/sched/sched_strats.h"
 
 #include "cedos/mm/paging.h"
+#include "cedos/mm/memory.h"
 
 #include "cedos/drivers/console.h"
 #include "cedos/drivers/speaker.h"
@@ -29,9 +30,8 @@
 #endif
 
 PROCESS* get_slot(void) {
-    static PROCESS free_slots[8];
-    static uint32_t index = 0;
-    return &(free_slots[index++]);
+    PROCESS *new_process = (PROCESS*)os_kernel_malloc(sizeof(PROCESS));
+    return new_process;
 }
 
 PROCESS_ID current_pid;

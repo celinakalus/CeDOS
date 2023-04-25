@@ -1,5 +1,7 @@
 #include "cedos/mm/memory.h"
 
+#include "assert.h"
+
 struct memblock {
     struct memblock *next;
     int size;
@@ -31,19 +33,26 @@ void* os_kernel_malloc(size_t size) {
     uint32_t addr = (uint32_t)(malloc_next_free);
 
     // TODO: test if memory block is large enough
+    assert(malloc_next_free->size == 0);
+
     addr += sizeof(struct memblock);
     addr += size;
 
+    // TODO: in some cases, one might rather link to the
+    //  next block after that instead of creating a new block
+
     struct memblock *new_block = (struct memblock*)(addr);
-    new_block->next = malloc_next_free->next;
     
-    // TODO: maybe not big enough?
+    new_block->next = malloc_next_free->next;
     new_block->size = 0;
 
     malloc_next_free->next = new_block;
     malloc_next_free->size = size;
 
-    return (void*)(&malloc_next_free[1]);
+    void *pointer = (void*)(&malloc_next_free[1]);
+    malloc_next_free = new_block;
+
+    return pointer;
 }
 
 /*!
