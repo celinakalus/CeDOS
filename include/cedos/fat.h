@@ -7,8 +7,10 @@
 
 void FAT_init();
 int FAT_dir_next(int fd, int index, char *fname_buffer);
-int FAT_openat(FILE *root, FILE *handle, const char *fname, int flags);
-uint32_t FAT_read(FILE *file, void *buffer, int count);
+int FAT_openat(file_t *root, file_t *handle, const char *fname, int flags);
+uint32_t FAT_read(file_t *file, void *buffer, int count);
+
+extern file_operations_t FAT_fops;
 
 
 #endif
