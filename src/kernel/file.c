@@ -78,9 +78,9 @@ int file_write(int fd, char *buffer, uint32_t size) {
 }
 
 int file_dir_next(int fd, int index, char *fname_buffer) {
-    if (fd & 0x1000) {
-        return FAT_dir_next(fd, index, fname_buffer);
-    } else {
-        return -1;
-    }
+    file_t *file = &file_table[fd];
+
+    if (file->fops->dir_next == NULL) { return -1; }
+
+    file->fops->dir_next(file, index, fname_buffer);
 }

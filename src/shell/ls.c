@@ -9,7 +9,7 @@ void main(char *args) {
     int index = 0;
 
     while (1) {
-        int next = dir_next(0x1000, index, buffer);
+        int next = dir_next(2, index, buffer);
 
         if (next == -1) { return; }
 

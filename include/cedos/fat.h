@@ -6,7 +6,7 @@
 #include "cedos/file.h"
 
 void FAT_init();
-int FAT_dir_next(int fd, int index, char *fname_buffer);
+int FAT_dir_next(file_t *file, int index, char *fname_buffer);
 int FAT_openat(file_t *root, file_t *handle, const char *fname, int flags);
 uint32_t FAT_read(file_t *file, void *buffer, int count);
 

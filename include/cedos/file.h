@@ -25,7 +25,7 @@ struct file_operations {
     int (*openat)(file_t *root, file_t *handle, const char *fname, int flags);
     int (*read)(file_t *file, char *buffer, uint32_t size);
     int (*write)(file_t *file, char *buffer, uint32_t size);
-    int (*dir_next)(int fd, int index, char *fname_buffer);
+    int (*dir_next)(file_t *file, int index, char *fname_buffer);
 };
 
 int file_init();

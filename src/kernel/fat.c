@@ -179,15 +179,12 @@ int FAT_root_dir_next(int index, char *fname_buffer, uint16_t *first_cluster, ui
     }
 }
 
-int FAT_dir_next(int fd, int index, char *fname_buffer) {
+int FAT_dir_next(file_t *file, int index, char *fname_buffer) {
     uint16_t first_cluster;
     uint32_t file_size;
 
-    if (fd == 0x1000) {
-        return FAT_root_dir_next(index, fname_buffer, &first_cluster, &file_size);
-    } else {
-        return -1;
-    }
+    // TODO: subdirectories
+    return FAT_root_dir_next(index, fname_buffer, &first_cluster, &file_size);
 }
 
 uint16_t FAT_next_cluster(uint16_t cluster) {
