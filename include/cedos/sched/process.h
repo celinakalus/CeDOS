@@ -67,6 +67,12 @@ typedef struct __PROCESS {
     //! String of arguments for the process
     char *args;
 
+    //! process stdin
+    int stdin;
+
+    //! process stdout
+    int stdout;
+
     /*
      * String buffers for name and args
      * TODO: eventually move to a malloc solution

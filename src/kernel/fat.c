@@ -1,6 +1,17 @@
+#include "cedos/file.h"
 #include "cedos/fat.h"
 #include "string.h"
+#include "assert.h"
+
 #include <stdint.h>
+
+file_operations_t FAT_fops = {
+    NULL,           /* open */
+    FAT_openat,     /* openat */
+    FAT_read,       /* read */
+    NULL,           /* write */
+    FAT_dir_next    /* dir_next */
+};
 
 typedef struct {
     char jmp[3];
@@ -168,15 +179,12 @@ int FAT_root_dir_next(int index, char *fname_buffer, uint16_t *first_cluster, ui
     }
 }
 
-int FAT_dir_next(int fd, int index, char *fname_buffer) {
+int FAT_dir_next(file_t *file, int index, char *fname_buffer) {
     uint16_t first_cluster;
     uint32_t file_size;
 
-    if (fd == 0x1000) {
-        return FAT_root_dir_next(index, fname_buffer, &first_cluster, &file_size);
-    } else {
-        return -1;
-    }
+    // TODO: subdirectories
+    return FAT_root_dir_next(index, fname_buffer, &first_cluster, &file_size);
 }
 
 uint16_t FAT_next_cluster(uint16_t cluster) {
@@ -196,16 +204,10 @@ uint16_t FAT_next_cluster(uint16_t cluster) {
     }
 }
 
-int FAT_openat(int fd, const char *fname, int flags) {
+int FAT_openat(file_t *root, file_t *handle, const char *fname, int flags) {
     int i = 0;
 
     // TODO: take fd into consideration (open file in that subdirectory)
-    
-    
-    if (!(fd & 0x1000)) { return -1; }
-
-    fd &= 0x0FFF;
-
     uint16_t first_cluster;
     while (1) {
         char buffer[832];
@@ -216,15 +218,15 @@ int FAT_openat(int fd, const char *fname, int flags) {
 
         if (strcmp(buffer, fname) == 0) {
             // file found
-            return first_cluster | 0x1000;
+            handle->fops = &FAT_fops;
+            handle->fat_cluster = first_cluster;
+            return 0;
         }
     }
 }
 
-uint32_t FAT_read(int fd, void *buffer, int count) {
-    if (!(fd & 0x1000)) { return -1; }
-    
-    uint16_t cluster = fd & 0xFFF;
+uint32_t FAT_read(file_t *file, void *buffer, int count) {
+    uint16_t cluster = file->fat_cluster;
     uint32_t size = 0;
 
     while (1) {

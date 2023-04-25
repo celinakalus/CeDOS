@@ -129,6 +129,8 @@ PROCESS_ID elf_exec(const char *fname, char *args) {
     VIRT_ADDR elf_addr = (VIRT_ADDR*)(0xA0000000);
     // TODO: needs to change when we have other file systems
     int fd = file_open(fname, 0);
+    PRINT_DBG("File handle: %i\n", fd);
+    
     if (fd == -1) {
         printk("Executable file not found: %s\n", fname);
         return -1;

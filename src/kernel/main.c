@@ -16,6 +16,7 @@
 
 #include "cedos/elf.h"
 
+#include "cedos/file.h"
 #include "cedos/fat.h"
 
 #include "linker.h"
@@ -65,7 +66,11 @@ int os_init(void) {
     ps2_kb.init();
     printk("done.\n");
 
-    printk("Initializing root file system...");
+    printk("Initializing files...");
+    file_init();
+    printk("done.\n");
+
+    printk("Initializing FAT file system...");
     FAT_init();
     printk("done.\n");
 
@@ -123,7 +128,7 @@ int os_main(void) {
     printk("Creating tasks.\n");
     
     
-    int pid = sched_spawn("shelf", "Hello World!");
+    int pid = sched_spawn("shelf", "Hello World!", 0);
     assert(pid != -1);
     //sched_spawn("fibonacci.o", "Hello World!");
     //sched_spawn("fibonacci.o", "Hello World!");

@@ -3,12 +3,14 @@
 
 #include <stdint.h>
 
+#include "cedos/file.h"
+
 void FAT_init();
-//void *FAT_read_sector_offset(uint32_t lba, uint32_t *offset);
-//void *FAT_read_cluster(uint16_t cluster, void *buffer);
-//uint16_t FAT_next_cluster(uint16_t cluster);
-int FAT_root_dir_next(int index, char *fname_buffer, uint16_t *first_cluster, uint32_t *file_size);
-uint32_t FAT_read_file(const char *fname, void *buffer);
-int FAT_dir_next(int fd, int index, char *fname_buffer);
+int FAT_dir_next(file_t *file, int index, char *fname_buffer);
+int FAT_openat(file_t *root, file_t *handle, const char *fname, int flags);
+uint32_t FAT_read(file_t *file, void *buffer, int count);
+
+extern file_operations_t FAT_fops;
+
 
 #endif
