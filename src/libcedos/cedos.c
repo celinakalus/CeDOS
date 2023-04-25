@@ -38,6 +38,12 @@ int process_spawn(const char *fname, const char *args) {
     return res;
 }
 
+int process_spawn_pipe(const char *fname, const char *args, int stdin, int stdout) {
+    volatile uint32_t res = 0;
+    interrupt(0x30, res, 4, fname, args, stdin | (stdout << 8));
+    return res;
+}
+
 void process_wait(int pid) {
     volatile uint32_t res = 0;
     interrupt(0x30, res, 5, pid, 0, 0);

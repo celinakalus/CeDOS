@@ -128,7 +128,7 @@ int os_main(void) {
     printk("Creating tasks.\n");
     
     
-    int pid = sched_spawn("shelf", "Hello World!");
+    int pid = sched_spawn("shelf", "Hello World!", 0);
     assert(pid != -1);
     //sched_spawn("fibonacci.o", "Hello World!");
     //sched_spawn("fibonacci.o", "Hello World!");

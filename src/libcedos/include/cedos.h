@@ -9,6 +9,7 @@ int sysprint(const char *fmt, int arg1, int arg2);
 int yield();
 int get_pid();
 int process_spawn(const char *fname, const char *args);
+int process_spawn_pipe(const char *fname, const char *args, int stdin, int stdout);
 void process_wait(int pid);
 
 void graphics_set_mode(int mode);

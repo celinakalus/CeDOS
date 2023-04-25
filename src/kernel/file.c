@@ -1,8 +1,12 @@
 #include "cedos/file.h"
 #include "cedos/fat.h"
+#include "cedos/pipe.h"
 
 #include "cedos/drivers/tty.h"
 #include "cedos/core.h"
+
+#include "cedos/sched/sched.h"
+#include "cedos/sched/process.h"
 
 #ifdef DEBUG
 #define PRINT_DBG(...) printk("[" __FILE__ "] " __VA_ARGS__)
@@ -15,7 +19,7 @@
 file_t file_table[256];
 int next_free = 0;
 
-int stdin, stdout, fat_root;
+int stdin, stdout, fat_root, pipe;
 
 int file_init() {
     file_table[next_free].fops = &tty_fops;
@@ -34,6 +38,10 @@ int file_init() {
     file_table[next_free].fat_cluster = 0;
     fat_root = next_free++;
 
+    // pipe
+    file_table[next_free].fops = &pipe_fops;
+    pipe = next_free++;
+
     return 0;
 }
 
@@ -45,13 +53,26 @@ int file_open(const char *pathname, int flags) {
     return file_openat(fat_root, pathname, flags);
 }
 
+file_t *get_process_local_file(int fd) {
+    if (fd > 1) { return &file_table[fd]; }
+    
+    PROCESS_ID pid = get_current_process();
+    PRINT_DBG("pid: %i\n", pid);
+    PROCESS *p = get_process(pid);
+
+    if (fd == 0) { return &file_table[p->stdin]; }
+    if (fd == 1) { return &file_table[p->stdout]; }
+
+    return NULL;
+}
+
 int file_openat(int fd, const char *fname, int flags) {
     int new_fd = next_free++;
 
     PRINT_DBG("Given fd: %i\n", fd);
     PRINT_DBG("New fd:   %i\n", new_fd);
 
-    file_t *root = &file_table[fd];
+    file_t *root = get_process_local_file(fd);
     file_t *handle = &file_table[new_fd];
 
     if (root->fops->openat == NULL) { return -1; }
@@ -62,7 +83,7 @@ int file_openat(int fd, const char *fname, int flags) {
 }
 
 int file_read(int fd, char *buffer, uint32_t size) {
-    file_t *file = &file_table[fd];
+    file_t *file = get_process_local_file(fd);
 
     if (file->fops->read == NULL) { return -1; }
 
@@ -70,7 +91,7 @@ int file_read(int fd, char *buffer, uint32_t size) {
 }
 
 int file_write(int fd, char *buffer, uint32_t size) {
-    file_t *file = &file_table[fd];
+    file_t *file = get_process_local_file(fd);
 
     if (file->fops->write == NULL) { return -1; }
 
@@ -78,7 +99,7 @@ int file_write(int fd, char *buffer, uint32_t size) {
 }
 
 int file_dir_next(int fd, int index, char *fname_buffer) {
-    file_t *file = &file_table[fd];
+    file_t *file = get_process_local_file(fd);
 
     if (file->fops->dir_next == NULL) { return -1; }
 

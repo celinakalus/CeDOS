@@ -52,8 +52,12 @@ void entry_idle(char *args) {
 /*!
  * Spawn a new process and returns its process ID.
  */
-PROCESS_ID sched_spawn(const char *name, char *args) {
+PROCESS_ID sched_spawn(const char *name, char *args, int flags) {
     crit_enter();
+
+    PRINT_DBG("process name: %s\n", name);
+    PRINT_DBG("process args: %s\n", args);
+    PRINT_DBG("process flags: %i\n", flags);
 
     if (name != NULL) {
         int fd = file_open(name, 0);
@@ -70,6 +74,14 @@ PROCESS_ID sched_spawn(const char *name, char *args) {
     p->esp = USER_STACK - sizeof(SCHED_FRAME);
     p->eflags = PROCESS_STD_EFLAGS;
     p->entry = (PROCESS_MAIN*)(0xDEADBEEF);
+
+    if (flags != 0) {
+        p->stdin = (int)(flags & 0xFF);
+        p->stdout = (int)(flags >> 8);
+    } else {
+        p->stdin = 0;
+        p->stdout = 1;
+    }
     
     // TODO: implement with malloc
     strcpy(p->name_buf, name);
@@ -185,7 +197,7 @@ int sched_init(void) {
     current_pid = 0;
 
     // create idle process
-    PROCESS_ID idle = sched_spawn(NULL, NULL);
+    PROCESS_ID idle = sched_spawn(NULL, NULL, 0);
     assert(idle != -1);
 
     return 1;
