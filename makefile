@@ -27,7 +27,9 @@ GLOBAL_BUILD		:= $(CURRENT_DIR)/build
 # common flags
 CCFLAGS 			:= $(CCFLAGS) -Wno-write-strings 
 CCFLAGS 			:= $(CCFLAGS) -Qn 
+CCFLAGS 			:= $(CCFLAGS) -pedantic -Wold-style-definition 
 CCFLAGS 			:= $(CCFLAGS) -Wall -Wextra -fno-exceptions 
+CCFLAGS 			:= $(CCFLAGS) -Werror-implicit-function-declaration
 CCFLAGS 			:= $(CCFLAGS) -nostdlib -nostartfiles -ffreestanding 
 CCFLAGS 			:= $(CCFLAGS) -mgeneral-regs-only -mno-red-zone
 CCFLAGS				:= $(CCFLAGS) --prefix=$(CROSS_COMP)

@@ -20,12 +20,6 @@ int get_pid() {
     return res;
 }
 
-int file_openat(int fd, const char *fname, int flags) {
-    volatile uint32_t res = 0;
-    interrupt(0x30, res, 6, fd, fname, flags);
-    return res;
-}
-
 int sc_file_read(int fd, char *buffer, uint32_t size) {
     volatile uint32_t res = 0;
     interrupt(0x30, res, 0, fd, buffer, size);
@@ -49,7 +43,7 @@ void process_wait(int pid) {
     interrupt(0x30, res, 5, pid, 0, 0);
 }
 
-int sc_file_open(char *pathname, int flags) {
+int sc_file_open(char *pathname, uint32_t flags) {
     volatile uint32_t res = 0;
     interrupt(0x30, res, 6, pathname, flags, 0);
     return res;

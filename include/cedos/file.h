@@ -17,6 +17,7 @@ typedef struct {
     fpos_t pos;
 } FILE;
 
+int file_init();
 int file_open(const char *pathname, int flags);
 int file_openat(int fd, const char *fname, int flags);
 int file_read(int fd, char *buffer, uint32_t size);
