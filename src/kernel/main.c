@@ -7,6 +7,7 @@
 #include "cedos/sched/process.h"
 
 #include "cedos/mm/paging.h"
+#include "cedos/mm/memory.h"
 
 #include "cedos/interrupts.h"
 #include "cedos/syscall.h"
@@ -48,6 +49,10 @@ int os_init(void) {
 
     printk("Setting up paging...");
     paging_init();
+    printk("done.\n");
+
+    printk("Initiallizing malloc...");
+    malloc_init();
     printk("done.\n");
 
     printk("Activating interrupts...");

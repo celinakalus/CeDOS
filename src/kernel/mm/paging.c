@@ -194,6 +194,7 @@ PHYS_ADDR create_empty_page_dir(void) {
 
     // map kernel
     page_dir[PAGE_DIR_INDEX(0xc0000000)] = PAGE_DIR_MAPPED_ADDR[PAGE_DIR_INDEX(0xc0000000)];
+    page_dir[PAGE_DIR_INDEX(0xc0400000)] = PAGE_DIR_MAPPED_ADDR[PAGE_DIR_INDEX(0xc0400000)];
 
     return page_dir_phys;
 }
