@@ -5,6 +5,8 @@
 #include "cedos/drivers/tty.h"
 #include "cedos/core.h"
 
+#include "cedos/mm/memory.h"
+
 #include "cedos/sched/sched.h"
 #include "cedos/sched/process.h"
 
@@ -16,12 +18,14 @@
 
 //const int root_fd = 0x1000;
 
-file_t file_table[256];
+file_t *file_table;
 int next_free = 0;
 
 int stdin, stdout, fat_root, pipe;
 
 int file_init() {
+    file_table = os_kernel_malloc(sizeof(file_t) * 512);
+
     file_table[next_free].fops = &tty_fops;
     file_table[next_free].stdio_id = 0;
     file_table[next_free].fat_cluster = 0;
