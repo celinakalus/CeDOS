@@ -7,7 +7,8 @@ file_operations_t pipe_fops = {
     NULL,           /* openat */
     pipe_read,      /* read */
     pipe_write,     /* write */
-    NULL            /* dir_next */
+    NULL,           /* dir_next */
+    NULL            /* lseek */
 };
 
 #define PIPE_BUFFER_SIZE 512
