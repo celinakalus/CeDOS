@@ -51,12 +51,12 @@ int os_init(void) {
     paging_init();
     printk("done.\n");
 
-    printk("Initiallizing malloc...");
-    malloc_init();
-    printk("done.\n");
-
     printk("Activating interrupts...");
     sti();
+    printk("done.\n");
+
+    printk("Initiallizing malloc...");
+    malloc_init();
     printk("done.\n");
 
     printk("Installing syscalls...");

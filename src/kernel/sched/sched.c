@@ -21,7 +21,7 @@
 #define KERNEL_PRIVATE_STACK (void*)(0xC0600000)
 #define USER_STACK (void*)(0xC0000000)
 
-#define PROCESS_STD_EFLAGS (0x00000286)
+#define PROCESS_STD_EFLAGS (0x00000200)
 
 #ifdef DEBUG
 #define PRINT_DBG(...) printk("[" __FILE__ "] " __VA_ARGS__)
@@ -69,11 +69,16 @@ PROCESS_ID sched_spawn(const char *name, char *args, int flags) {
     // set process context
     PROCESS *p = get_slot();
     p->page_dir = page_dir;
-    p->eip = sched_dispatcher;
     p->ebp = USER_STACK;
     p->esp = USER_STACK - sizeof(SCHED_FRAME);
     p->eflags = PROCESS_STD_EFLAGS;
     p->entry = (PROCESS_MAIN*)(0xDEADBEEF);
+    
+    if (name == NULL) {
+        p->eip = entry_idle;
+    } else {
+        p->eip = sched_dispatcher;
+    }
 
     if (flags != 0) {
         p->stdin = (int)(flags & 0xFF);
@@ -101,12 +106,7 @@ PROCESS_ID sched_spawn(const char *name, char *args, int flags) {
     frame.esp = (uint32_t)(p->esp);
     frame.eflags = p->eflags;
     frame.cs = 0x18;
-
-    if (name == NULL) {
-        frame.eip = (uint32_t)(entry_idle);
-    } else {
-        frame.eip = (uint32_t)(sched_dispatcher);
-    }
+    frame.eip = (uint32_t)(p->eip);
 
     // load stack
     copy_to_pdir(&frame, sizeof(frame), p->page_dir, p->esp);
@@ -162,6 +162,11 @@ void sched_interrupt_c(SCHED_FRAME * volatile frame, uint32_t volatile ebp) {
     PROCESS* next = get_process(current_pid);
     switch_page_dir(next->page_dir);
 
+    PRINT_DBG("esp: %p\n", next->esp);
+    PRINT_DBG("ebp: %p\n", next->ebp);
+    PRINT_DBG("eip: %p\n", next->eip);
+    PRINT_DBG("eflags: %p\n", next->eflags);
+
     STACK_CHECKSUM checksum;
     stack_compute_checksum(&(checksum), next->esp, next->ebp);
 
@@ -175,16 +180,21 @@ void sched_interrupt_c(SCHED_FRAME * volatile frame, uint32_t volatile ebp) {
     // prepare stack
     frame = (volatile SCHED_FRAME*)(next->esp);
     ebp = next->ebp;
-    /*frame->cs = 0x08;
-    frame->eip = next->eip;
-    frame->eflags = (uint32_t)(next->eflags);
-    frame->esp = (uint32_t)(next->esp);
-    frame->ebp = (uint32_t)(next->ebp);*/
+
+    if (current_pid == 0) {
+        frame->cs = 0x18;
+        frame->eip = next->eip;
+        frame->eflags = (uint32_t)(next->eflags);
+        frame->esp = (uint32_t)(next->esp);
+        frame->ebp = (uint32_t)(next->ebp);
+    }
+
+    PRINT_DBG("esp: %p, ebp: %p, eip: %p, eflags: %p\n", frame->esp, frame->ebp, frame->eip, frame->eflags);
 
 
     // reset the timer
     pit_setup_channel(PIT_CHANNEL_0, PIT_MODE_0, SCHED_INTERVAL);
-
+    
     pic1_eoi();
 }
 

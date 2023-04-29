@@ -201,8 +201,8 @@ uint32_t crit_stash(void) {
     uint32_t __csc = crit_sect_counter;
     crit_sect_counter = 0;
     if (__csc > 0) {
-        uint32_t eflags = get_eflags() | if_state;
-        set_eflags(eflags);
+        if_state = get_eflags() & (1 << 9); 
+        sti();
     }
     return __csc;
 }
@@ -210,8 +210,8 @@ uint32_t crit_stash(void) {
 void crit_restore(uint32_t state) {
     crit_sect_counter = state;
     if (crit_sect_counter > 0) {
-        if_state = get_eflags() & (1 << 9); 
-        cli();
+        uint32_t eflags = get_eflags() | if_state;
+        set_eflags(eflags);
     }
 }
 

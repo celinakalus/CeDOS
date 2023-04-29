@@ -48,7 +48,7 @@ KB_DRIVER ps2_kb = {
 };
 
 uint8_t buffer[BUFFER_LENGTH];
-uint32_t buffer_head, buffer_tail;
+volatile uint32_t buffer_head, buffer_tail;
 
 __attribute__((always_inline)) inline void buffer_enqueue(uint8_t value) {
     buffer[buffer_head] = value;
@@ -104,7 +104,7 @@ int ps2_kb_init(void) {
 
 uint8_t ps2_kb_read(void) {
     while (buffer_empty()) {
-        PRINT_DBG("yield.\n");
+        //PRINT_DBG("yield.\n");
         sched_yield();
     }
 

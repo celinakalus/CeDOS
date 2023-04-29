@@ -28,9 +28,9 @@ typedef struct {
 }__attribute__((packed)) IDT_ENTRY;
 
 typedef struct {
-    uint32_t eflags;
-    uint32_t cs;
     uint32_t eip;
+    uint32_t cs;
+    uint32_t eflags;
 }__attribute__((packed)) INTERRUPT_FRAME;
 
 typedef uint32_t uword_t;
