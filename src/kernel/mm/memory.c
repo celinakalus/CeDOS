@@ -7,14 +7,14 @@ struct memblock {
     int size;
 };
 
-struct memblock *malloc_first, *malloc_last, *malloc_next_free;
+volatile struct memblock volatile *malloc_first, *malloc_last, *malloc_next_free;
 
 int malloc_init() {
     uint32_t mem_start = 0xC0400000u;
     uint32_t mem_end = 0xC0800000u;
 
-    malloc_first = (struct memblock*)(mem_start);
-    malloc_last = (struct memblock*)(mem_end - sizeof(struct memblock));
+    malloc_first = (volatile struct memblock*)(mem_start);
+    malloc_last = (volatile struct memblock*)(mem_end - sizeof(struct memblock));
     malloc_next_free = malloc_first;
 
     malloc_first->size = 0;
@@ -30,18 +30,20 @@ int malloc_init() {
  * \return Memory address to the new memory block
  */
 void* os_kernel_malloc(size_t size) {
-    uint32_t addr = (uint32_t)(malloc_next_free);
-
-    // TODO: test if memory block is large enough
+    // size == 0 means the block is free
     assert(malloc_next_free->size == 0);
 
+    // TODO: test if memory block is large enough
+
+
+    uint32_t addr = (uint32_t)(malloc_next_free);
     addr += sizeof(struct memblock);
     addr += size;
 
     // TODO: in some cases, one might rather link to the
     //  next block after that instead of creating a new block
 
-    struct memblock *new_block = (struct memblock*)(addr);
+    struct memblock *new_block = (volatile struct memblock*)(addr);
     
     new_block->next = malloc_next_free->next;
     new_block->size = 0;
