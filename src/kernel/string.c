@@ -20,6 +20,7 @@ char *strcpy(char *destination, const char *source) {
         destination[i] = source[i];
         i++;
     }
+    destination[i] = 0;
     return destination;
 }
 
