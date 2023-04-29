@@ -3,6 +3,8 @@
 #include "string.h"
 #include "assert.h"
 
+#include "cedos/mm/memory.h"
+
 #include <stdint.h>
 
 file_operations_t FAT_fops = {
@@ -225,16 +227,40 @@ int FAT_openat(file_t *root, file_t *handle, const char *fname, int flags) {
     }
 }
 
-uint32_t FAT_read(file_t *file, void *buffer, int count) {
+uint32_t FAT_read(file_t *file, uint8_t *buffer, uint32_t count) {
     uint16_t cluster = file->fat_cluster;
+    fpos_t offset = 0; //file->pos;
     uint32_t size = 0;
 
-    while (1) {
-        buffer = FAT_read_cluster(cluster, buffer);
+    uint32_t cluster_size = boot_sect->bytes_per_sect * boot_sect->sect_per_cluster;
+    uint8_t *cluster_buffer = os_kernel_malloc(cluster_size);
+
+    while (offset >= cluster_size) {
         cluster = FAT_next_cluster(cluster);
-        size += boot_sect->bytes_per_sect * boot_sect->sect_per_cluster;
-        
+        if (cluster == 0xFFF || cluster == 0x000) { return -1; }
+        offset -= cluster_size;
+    }
+
+    while (count > 0) {
         if (cluster == 0xFFF || cluster == 0x000) { break; }
+
+        FAT_read_cluster(cluster, cluster_buffer);
+        cluster = FAT_next_cluster(cluster);
+
+        uint32_t memcpy_size;
+
+        if (offset + count > cluster_size) {
+            memcpy_size = (cluster_size - offset);
+        } else {
+            memcpy_size = count;
+        }
+
+        memcpy(buffer, (cluster_buffer + offset), memcpy_size);
+
+        offset = 0;
+        count -= memcpy_size;
+        buffer += memcpy_size;
+        size += memcpy_size;
     }
 
     return size;

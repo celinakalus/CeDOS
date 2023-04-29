@@ -135,7 +135,7 @@ PROCESS_ID elf_exec(const char *fname, char *args) {
         printk("Executable file not found: %s\n", fname);
         return -1;
     }
-    int size = file_read(fd, elf_addr, 0);
+    int size = file_read(fd, elf_addr, 0xFFFF);
     assert(size != 0);
 
     ELF_HEADER *header = (ELF_HEADER*)(elf_addr);
