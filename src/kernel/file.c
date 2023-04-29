@@ -109,3 +109,11 @@ int file_dir_next(int fd, int index, char *fname_buffer) {
 
     file->fops->dir_next(file, index, fname_buffer);
 }
+
+off_t file_lseek(int fd, off_t offset, int whence) {
+    file_t *file = get_process_local_file(fd);
+
+    if (file->fops->lseek == NULL) { return -1; }
+
+    return file->fops->lseek(file, offset, whence);
+}

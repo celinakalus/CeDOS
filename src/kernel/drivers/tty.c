@@ -9,7 +9,8 @@ file_operations_t tty_fops = {
     tty_openat,     /* openat */
     tty_read,       /* read */
     tty_write,      /* write */
-    NULL            /* dir_next */
+    NULL,           /* dir_next */
+    NULL            /* lseek */
 }; 
 
 int tty_open(const char *pathname, int flags) {

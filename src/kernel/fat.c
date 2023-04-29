@@ -3,6 +3,8 @@
 #include "string.h"
 #include "assert.h"
 
+#include "cedos/mm/memory.h"
+
 #include <stdint.h>
 
 file_operations_t FAT_fops = {
@@ -10,7 +12,8 @@ file_operations_t FAT_fops = {
     FAT_openat,     /* openat */
     FAT_read,       /* read */
     NULL,           /* write */
-    FAT_dir_next    /* dir_next */
+    FAT_dir_next,   /* dir_next */
+    FAT_lseek       /* lseek */
 };
 
 typedef struct {
@@ -218,6 +221,7 @@ int FAT_openat(file_t *root, file_t *handle, const char *fname, int flags) {
 
         if (strcmp(buffer, fname) == 0) {
             // file found
+            handle->pos = 0;
             handle->fops = &FAT_fops;
             handle->fat_cluster = first_cluster;
             return 0;
@@ -225,17 +229,55 @@ int FAT_openat(file_t *root, file_t *handle, const char *fname, int flags) {
     }
 }
 
-uint32_t FAT_read(file_t *file, void *buffer, int count) {
+uint32_t FAT_read(file_t *file, uint8_t *buffer, uint32_t count) {
     uint16_t cluster = file->fat_cluster;
+    fpos_t offset = file->pos;
     uint32_t size = 0;
 
-    while (1) {
-        buffer = FAT_read_cluster(cluster, buffer);
+    uint32_t cluster_size = boot_sect->bytes_per_sect * boot_sect->sect_per_cluster;
+    uint8_t *cluster_buffer = os_kernel_malloc(cluster_size);
+
+    while (offset >= cluster_size) {
         cluster = FAT_next_cluster(cluster);
-        size += boot_sect->bytes_per_sect * boot_sect->sect_per_cluster;
-        
-        if (cluster == 0xFFF || cluster == 0x000) { break; }
+        if (cluster == 0xFFF || cluster == 0x000) { return -1; }
+        offset -= cluster_size;
     }
 
+    while (count > 0) {
+        if (cluster == 0xFFF || cluster == 0x000) { break; }
+
+        FAT_read_cluster(cluster, cluster_buffer);
+        cluster = FAT_next_cluster(cluster);
+
+        uint32_t memcpy_size;
+
+        if (offset + count > cluster_size) {
+            memcpy_size = (cluster_size - offset);
+        } else {
+            memcpy_size = count;
+        }
+
+        memcpy(buffer, (cluster_buffer + offset), memcpy_size);
+
+        offset = 0;
+        count -= memcpy_size;
+        buffer += memcpy_size;
+        size += memcpy_size;
+    }
+
+    file->pos += size;
+
     return size;
+}
+
+off_t FAT_lseek(file_t *file, off_t offset, int whence) {
+    if (whence == SEEK_SET) {
+        file->pos = offset;
+    } else if (whence == SEEK_CUR) {
+        file->pos += offset;
+    } else if (whence == SEEK_END) {
+        // to be implemented
+    } else {
+        kpanic("Wrong whence!");
+    }
 }
