@@ -13,7 +13,8 @@ file_operations_t FAT_fops = {
     FAT_read,       /* read */
     NULL,           /* write */
     FAT_dir_next,   /* dir_next */
-    FAT_lseek       /* lseek */
+    FAT_lseek,      /* lseek */
+    FAT_tell        /* tell */
 };
 
 typedef struct {
@@ -222,6 +223,7 @@ int FAT_openat(file_t *root, file_t *handle, const char *fname, int flags) {
         if (strcmp(buffer, fname) == 0) {
             // file found
             handle->pos = 0;
+            handle->size = file_size;
             handle->fops = &FAT_fops;
             handle->fat_cluster = first_cluster;
             return 0;
@@ -232,10 +234,15 @@ int FAT_openat(file_t *root, file_t *handle, const char *fname, int flags) {
 uint32_t FAT_read(file_t *file, uint8_t *buffer, uint32_t count) {
     uint16_t cluster = file->fat_cluster;
     fpos_t offset = file->pos;
+    size_t file_size = file->size;
     uint32_t size = 0;
 
     uint32_t cluster_size = boot_sect->bytes_per_sect * boot_sect->sect_per_cluster;
     uint8_t *cluster_buffer = os_kernel_malloc(cluster_size);
+
+    if (offset + count > file_size) {
+        count = file_size - offset;
+    }
 
     while (offset >= cluster_size) {
         cluster = FAT_next_cluster(cluster);
@@ -280,4 +287,8 @@ off_t FAT_lseek(file_t *file, off_t offset, int whence) {
     } else {
         kpanic("Wrong whence!");
     }
+}
+
+off_t FAT_tell(file_t *file) {
+    return file->pos;
 }

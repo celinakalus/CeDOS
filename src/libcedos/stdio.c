@@ -7,13 +7,82 @@
 char user_numeric[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 char user_hex[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
+FILE* fopen(const char* filename, const char* mode) {
+    return (FILE*)(sc_file_open(filename, NULL));
+}
+
+size_t fread(void* buffer, size_t size, size_t count, FILE* file) {
+    return sc_file_read((int)(file), buffer, size * count);
+}
+
+size_t fwrite(const void* buffer, size_t size, size_t count, FILE* file) {
+    return sc_file_write((int)(file), buffer, size * count);
+}
+
+int fputc ( int character, FILE * stream ) {
+    int retval;
+    char c = character;
+    retval = fwrite(&c, 1, 1, stream);
+
+    if (retval == 1) {
+        return (int)(c);
+    } else {
+        return EOF;
+    }
+}
+
+int fgetc ( FILE * stream ) {
+    int retval;
+    char c = 0;
+    retval = fread(&c, 1, 1, stream);
+
+    if (retval == 1) {
+        return (int)(c);
+    } else {
+        return EOF;
+    }
+}
+
+int fputs ( const char * str, FILE * stream ) {
+    int i = 0;
+
+    while (str[i] != 0 && str[i] != '\n') { i++; }
+
+    fwrite(str, 1, i, stream);
+
+    return i;
+}
+
+char * fgets ( char * str, int num, FILE * stream ) {
+    int i = 0;
+
+    while (i < num) { 
+        str[i] = fgetc(stream);
+        if (str[i] == '\n' || str[i] == EOF) { break; }
+        i++; 
+    }
+
+    return i + 1;
+}
+
+int sprintf ( char * str, const char * format, ... );
+int fprintf(FILE*, const char*, ...);
+int printf(const char *fmt, ...);
+
+int fseek(FILE*, long, int);
+long ftell(FILE*);
+
 
 int print(char *buffer, int num) {
-    return sc_file_write(0, buffer, num);
+    return fwrite(buffer, sizeof(char), num, stdout);
 }
 
 int read_char(char *buffer, int num) {
     return sc_file_read(1, buffer, num);
+}
+
+void print_char(char c) {
+    print(&c, 1);
 }
 
 /*void print_hex_char(uint8_t c) {
@@ -103,10 +172,6 @@ int print_hex_char(uint8_t c) {
     print(buffer, size);
 }
 
-void print_char(char c) {
-    print(&c, 1);
-}
-
 int printf(const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
@@ -143,3 +208,12 @@ int printf(const char *fmt, ...) {
         fmt++;
     }
 }
+
+int fprintf(FILE*, const char*, ...);
+FILE* fopen(const char*, const char*);
+
+int fseek(FILE*, long, int);
+long ftell(FILE*);
+
+size_t fread(void*, size_t, size_t, FILE*);
+size_t fwrite(const void*, size_t, size_t, FILE*);

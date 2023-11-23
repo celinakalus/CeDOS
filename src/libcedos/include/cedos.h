@@ -17,6 +17,8 @@ void graphics_set_mode(int mode);
 int sc_file_read(int fd, char *buffer, uint32_t size);
 int sc_file_write(int fd, char *buffer, uint32_t size);
 int sc_file_open(char *buffer, uint32_t flags);
+int sc_file_lseek(int fd, uint32_t offset, int whence);
+int sc_file_tell(int fd);
 
 void hard_reset();
 

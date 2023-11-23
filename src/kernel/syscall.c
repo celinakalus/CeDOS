@@ -18,7 +18,9 @@ void* SYSCALL_TABLE[] = {
         file_open,
         graphics_set_mode,
         hard_reset,
-        file_dir_next
+        file_dir_next,
+        file_lseek,
+        file_tell
     };
 
 extern void syscall_interrupt(void);

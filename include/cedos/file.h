@@ -23,6 +23,7 @@ struct file {
     uint32_t stdio_id;
     uint32_t fat_cluster;
     fpos_t pos;
+    size_t size;
 };
 
 struct file_operations {
@@ -32,6 +33,7 @@ struct file_operations {
     int (*write)(file_t *file, char *buffer, uint32_t size);
     int (*dir_next)(file_t *file, int index, char *fname_buffer);
     off_t (*lseek)(file_t *file, off_t offset, int whence);
+    off_t (*tell)(file_t *file);
 };
 
 int file_init();
@@ -39,6 +41,7 @@ int file_open(const char *pathname, int flags);
 int file_openat(int fd, const char *fname, int flags);
 int file_read(int fd, char *buffer, uint32_t size);
 off_t file_lseek(int fd, off_t offset, int whence);
+off_t file_tell(int fd);
 int file_write(int fd, char *buffer, uint32_t size);
 int file_dir_next(int fd, int index, char *fname_buffer);
 

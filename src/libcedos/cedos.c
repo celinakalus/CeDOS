@@ -32,6 +32,18 @@ int sc_file_write(int fd, char *buffer, uint32_t size) {
     return res;
 }
 
+int sc_file_lseek(int fd, uint32_t offset, int whence) {
+    volatile uint32_t res = 0;
+    interrupt(0x30, res, 10, fd, offset, whence);
+    return res;
+}
+
+int sc_file_tell(int fd) {
+    volatile uint32_t res = 0;
+    interrupt(0x30, res, 11, fd, 0, 0);
+    return res;
+}
+
 int process_spawn(const char *fname, const char *args) {
     volatile uint32_t res = 0;
     interrupt(0x30, res, 4, fname, args, 0);

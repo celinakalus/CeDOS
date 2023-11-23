@@ -91,7 +91,7 @@ int file_read(int fd, char *buffer, uint32_t size) {
 
     if (file->fops->read == NULL) { return -1; }
 
-    file->fops->read(file, buffer, size);
+    return file->fops->read(file, buffer, size);
 }
 
 int file_write(int fd, char *buffer, uint32_t size) {
@@ -116,4 +116,12 @@ off_t file_lseek(int fd, off_t offset, int whence) {
     if (file->fops->lseek == NULL) { return -1; }
 
     return file->fops->lseek(file, offset, whence);
+}
+
+off_t file_tell(int fd) {
+    file_t *file = get_process_local_file(fd);
+
+    if (file->fops->tell == NULL) { return -1; }
+
+    return file->fops->tell(file);
 }
