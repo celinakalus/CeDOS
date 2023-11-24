@@ -135,6 +135,17 @@ int sprint_int(int value, char *buffer) {
     }
 }
 
+int sprint_string(char *str, char *buffer) {
+    int length = 0;
+    while (str[length]) { buffer[length] = str[length]; length++; }
+    return length;
+}
+
+int sprint_char(char c, char *buffer) {
+    buffer[0] = c;
+    return 1;
+}
+
 /*void rek_print_uint(unsigned int value) {
     if (value > 0) {
         rek_print_uint(value / 10);
@@ -172,41 +183,67 @@ int print_hex_char(uint8_t c) {
     print(buffer, size);
 }
 
-int printf(const char *fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
+int vsprintf(char *str, const char *fmt, va_list args) {
     uint32_t index = 0;
+
+    int offset = 0;
 
     while (*fmt) {
         int i = 0;
-        while (fmt[i] != '\0' && fmt[i] != '%') { i++; }
-        if (i > 0) { print(fmt, i); }
+        while (fmt[i] != '\0' && fmt[i] != '%') { 
+            offset += sprint_char(fmt[i++], str + offset);
+        }
         if (fmt[i] == '\0') { break; }
         fmt = fmt + i + 1;
 
         if (*fmt == 'X') {
-            print_uint32(va_arg(args, uint32_t));
+            offset += sprint_uint32(va_arg(args, uint32_t), str + offset);
         } else if (*fmt == 'i') {
-            print_int(va_arg(args, int));
+            offset += sprint_int(va_arg(args, int), str + offset);
         } else if (*fmt == 'x') {
-            print_int(va_arg(args, char));
+            offset += sprint_hex_char(va_arg(args, int), str + offset);
         } else if (*fmt == 'u') {
-            print_uint(va_arg(args, unsigned int));
+            offset += sprint_uint(va_arg(args, unsigned int), str + offset);
         } else if (*fmt == 'p') {
-            print_uint32(va_arg(args, uint32_t));
+            offset += sprint_uint32(va_arg(args, uint32_t), str + offset);
         } else if (*fmt == 's') {
             const char* string = va_arg(args, const char*);
-            print_string(string);
+            offset += sprint_string(string, str + offset);
         } else if (*fmt == 'c') {
-            print_char(va_arg(args, int));
+            offset += sprint_char(va_arg(args, int), str + offset);
         } else if (*fmt == '%') {
-            print_char('%');
+            offset += sprint_char('%', str + offset);
         } else {
-            print_char(*fmt);
+            offset += sprint_char(*fmt, str + offset);
         }
 
         fmt++;
     }
+
+    str[offset] = 0;
+    return offset;
+}
+
+int printf(const char *fmt, ...) {
+    uint8_t buffer[512];
+    va_list args;
+
+    va_start(args, fmt);
+    int res = vsprintf(buffer, fmt, args);
+    va_end(args);
+    res = fwrite(buffer, sizeof(uint8_t), res, stdout);
+
+    return res;
+}
+
+int sprintf(char *str, const char *fmt, ...) {
+    va_list args;
+
+    va_start(args, fmt);
+    int res = vsprintf(str, fmt, args);
+    va_end(args);
+
+    return res;
 }
 
 int fprintf(FILE*, const char*, ...);
