@@ -199,14 +199,18 @@ PHYS_ADDR create_empty_page_dir(void) {
     return page_dir_phys;
 }
 
+#define PAGE_FAULT_FLAGS_PRESENT (1 << 0)
+
 EXCEPTION(page_fault_isr, frame, error_code) {
     volatile VIRT_ADDR faulty_addr;
     __asm__ volatile ("mov %%cr2, %0" : "=a" (faulty_addr));
-    //if (PAGE_DIR_INDEX(faulty_addr) >= PAGE_ENTRY_COUNT - 2) { return; }
-    PRINT_DBG("PAGE FAULT: %X\n", faulty_addr);
-    PHYS_ADDR new_page = get_free_page();
-    force_map_page_to_this(new_page, PAGE_DIR_INDEX(faulty_addr), PAGE_TABLE_INDEX(faulty_addr), PAGE_TABLE_FLAGS);
-    // dump registers to stdout
+    
+    if (error_code & PAGE_FAULT_FLAGS_PRESENT) {
+        kpanic("Page-protection violation!");
+    } else {
+        PHYS_ADDR new_page = get_free_page();
+        force_map_page_to_this(new_page, PAGE_DIR_INDEX(faulty_addr), PAGE_TABLE_INDEX(faulty_addr), PAGE_TABLE_FLAGS);
+    }
 }
 
 int paging_init(void) {
