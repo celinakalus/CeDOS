@@ -3,40 +3,36 @@
 
 #include <stdint.h>
 
-int hexdump(char *address, int length) {
-    unsigned char *first_line = (char *)((long)address & (long)0xFFFFFFF0);
-    unsigned char *last_line = (char *)((long)(address + length) & (long)0xFFFFFFF0);
-
-    while (1) {
-        if (first_line >= last_line) { break; }
-        printf("%p  ", first_line);
-        for (int i = 0; i < 16; i++) {
-            printf("%X ", (unsigned int)(first_line[i]));
-        }
-        printf(" |");
-        for (int i = 0; i < 16; i++) {
-            uint8_t c = *(uint8_t*)(&first_line[i]);
-            if (c < 0x20 || c > 0x7F) { c = '.'; }
-            printf("%c", c);
-        }
-        printf("\n");
-
-
-        first_line += 0x10;
-    }
-}
 
 void main(char *args) {
-    int fd = sc_file_open(args, 0);
+    FILE* file = fopen(args, "r");
 
-    if (fd < 0) {
+    if (file == NULL) {
         printf("Could not find file: %s\n", args);
         return;
     }
 
-    char *buffer = (void*)(0x2000000);
+    uint8_t in_buffer[16];
+    uint8_t out_buffer[64];
 
-    int size = sc_file_read(fd, buffer, -1);
+    uint32_t line = 0;
+    while (1) {
+        int size = fread(in_buffer, 1, 16, file);
+        if (size == 0) { break; }
 
-    hexdump(buffer, size);
+        int out_offset = 0;
+
+        out_offset += sprintf(out_buffer + out_offset, "%x%x  ", line++, 0);
+        for (int i = 0; i < 16; i++) {
+            out_offset += sprintf(out_buffer + out_offset, "%x ", in_buffer[i]);
+        }
+        out_offset += sprintf(out_buffer + out_offset, " |");
+        for (int i = 0; i < 16; i++) {
+            uint8_t c = in_buffer[i];
+            if (c < 0x20 || c > 0x7F) { c = '.'; }
+            out_offset += sprintf(out_buffer + out_offset, "%c", c);
+        }
+        out_offset += sprintf(out_buffer + out_offset, "\n");
+        fwrite(out_buffer, 1, out_offset, stdout);
+    }
 }
