@@ -23,6 +23,9 @@ int fputs ( const char * str, FILE * stream );
 int fgetc ( FILE * stream );
 char * fgets ( char * str, int num, FILE * stream );
 
+int getchar ( void );
+int putchar ( int character );
+
 size_t fread(void*, size_t, size_t, FILE*);
 size_t fwrite(const void*, size_t, size_t, FILE*);
 

@@ -65,6 +65,13 @@ char * fgets ( char * str, int num, FILE * stream ) {
     return i + 1;
 }
 
+int getchar ( void ) {
+    return fgetc(stdin);
+}
+int putchar ( int character ) {
+    return fputc(character, stdout);
+}
+
 int sprintf( char * str, const char * format, ... );
 int fprintf(FILE*, const char*, ...);
 int printf(const char *fmt, ...);
