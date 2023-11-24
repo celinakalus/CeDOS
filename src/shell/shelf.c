@@ -8,7 +8,7 @@ int read_line(char *buffer) {
     char c;
     buffer[0] = 0;
     while (1) {
-        sc_file_read(1, &c, 1);
+        c = getchar();
 
         if (c == '\n') { break; }
         if (c == 0) { continue; }
@@ -16,15 +16,15 @@ int read_line(char *buffer) {
 
         if (c == 0x08) {
             buffer[--i] = 0;
-            sc_file_write(0, &c, 1);
+            putchar(c);
         } else {
             buffer[i++] = c;
-            sc_file_write(0, &c, 1);
+            putchar(c);
         }
     }
 
     buffer[i] = 0;
-    sc_file_write(0, &c, 1);
+    putchar(c);
 
     return i;
 }
