@@ -32,7 +32,7 @@ void main(char *args) {
             if (c < 0x20 || c > 0x7F) { c = '.'; }
             out_offset += sprintf(out_buffer + out_offset, "%c", c);
         }
-        out_offset += sprintf(out_buffer + out_offset, "\n");
+        out_offset += sprintf(out_buffer + out_offset, "|\n");
         fwrite(out_buffer, 1, out_offset, stdout);
     }
 }
