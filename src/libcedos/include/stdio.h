@@ -26,6 +26,10 @@ char * fgets ( char * str, int num, FILE * stream );
 size_t fread(void*, size_t, size_t, FILE*);
 size_t fwrite(const void*, size_t, size_t, FILE*);
 
+int vsprintf ( char * str, const char * format, va_list args);
+int vfprintf(FILE*, const char*, va_list args);
+int vprintf(const char *fmt, va_list args);
+
 int sprintf ( char * str, const char * format, ... );
 int fprintf(FILE*, const char*, ...);
 int printf(const char *fmt, ...);

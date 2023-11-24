@@ -65,7 +65,7 @@ char * fgets ( char * str, int num, FILE * stream ) {
     return i + 1;
 }
 
-int sprintf ( char * str, const char * format, ... );
+int sprintf( char * str, const char * format, ... );
 int fprintf(FILE*, const char*, ...);
 int printf(const char *fmt, ...);
 
@@ -224,15 +224,10 @@ int vsprintf(char *str, const char *fmt, va_list args) {
     return offset;
 }
 
-int printf(const char *fmt, ...) {
+int vfprintf(FILE *file, const char *fmt, va_list args) {
     uint8_t buffer[512];
-    va_list args;
-
-    va_start(args, fmt);
     int res = vsprintf(buffer, fmt, args);
-    va_end(args);
-    res = fwrite(buffer, sizeof(uint8_t), res, stdout);
-
+    res = fwrite(buffer, sizeof(uint8_t), res, file);
     return res;
 }
 
@@ -246,11 +241,34 @@ int sprintf(char *str, const char *fmt, ...) {
     return res;
 }
 
-int fprintf(FILE*, const char*, ...);
-FILE* fopen(const char*, const char*);
+int fprintf(FILE *file, const char *fmt, ...) {
+    va_list args;
 
-int fseek(FILE*, long, int);
-long ftell(FILE*);
+    va_start(args, fmt);
+    int res = vfprintf(file, fmt, args);
+    va_end(args);
 
-size_t fread(void*, size_t, size_t, FILE*);
-size_t fwrite(const void*, size_t, size_t, FILE*);
+    return res;
+}
+
+int vprintf(const char *fmt, va_list args) {
+    return vfprintf(stdout, fmt, args);
+}
+
+int printf(const char *fmt, ...) {
+    va_list args;
+
+    va_start(args, fmt);
+    int res = vfprintf(stdout, fmt, args);
+    va_end(args);
+
+    return res;
+}
+
+int fseek(FILE* file, long offset, int whence) {
+    return sc_file_lseek(file, offset, whence);
+}
+
+long ftell(FILE* file) {
+    return sc_file_tell(file);
+}
