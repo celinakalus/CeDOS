@@ -8,6 +8,10 @@
 
 typedef uint32_t size_t;
 
+#define NULL (void*)(0)
+
+int malloc_init();
+
 /*!
  * Allocates a block of \p size bytes of memory. (KERNEL MODE)
  * \param size Size in bytes of the requested block of memory.

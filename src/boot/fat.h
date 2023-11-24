@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-void *FAT_init();
+void FAT_init();
 void *FAT_read_sector_offset(uint32_t lba, uint32_t *offset);
 void *FAT_read_cluster(uint16_t cluster, void *buffer);
 uint16_t FAT_next_cluster(uint16_t cluster);

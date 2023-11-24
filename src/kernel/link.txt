@@ -16,7 +16,7 @@ SECTIONS
     */*(.text)
     */*(.data)
     */*(.rodata*)
-    
+    */*(.bss)
   } >KERNEL_VMA
 
   REALMD : AT(LOADADDR(KERNEL) + SIZEOF(KERNEL))

@@ -5,5 +5,6 @@ docs/*
 *.o
 *.bin
 img-contents/*
+*.png
 
 .vscode

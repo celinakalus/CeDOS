@@ -27,7 +27,9 @@ GLOBAL_BUILD		:= $(CURRENT_DIR)/build
 # common flags
 CCFLAGS 			:= $(CCFLAGS) -Wno-write-strings 
 CCFLAGS 			:= $(CCFLAGS) -Qn 
+CCFLAGS 			:= $(CCFLAGS) -pedantic -Wold-style-definition 
 CCFLAGS 			:= $(CCFLAGS) -Wall -Wextra -fno-exceptions 
+CCFLAGS 			:= $(CCFLAGS) -Werror-implicit-function-declaration
 CCFLAGS 			:= $(CCFLAGS) -nostdlib -nostartfiles -ffreestanding 
 CCFLAGS 			:= $(CCFLAGS) -mgeneral-regs-only -mno-red-zone
 CCFLAGS				:= $(CCFLAGS) --prefix=$(CROSS_COMP)
@@ -72,6 +74,7 @@ $(GLOBAL_BUILD)/fat.img: $(MODULES)
 > sudo cp $(LOCAL_BUILD)/kernel.bin ./mnt
 > sudo cp $(LOCAL_BUILD)/bin/* ./mnt
 > sudo cp ./img-contents/* ./mnt
+> du -csh ./mnt/*
 > sudo umount ./mnt
 
 $(GLOBAL_BUILD)/cedos.img: $(GLOBAL_BUILD)/fat.img | $(MODULES) 
@@ -82,6 +85,7 @@ $(GLOBAL_BUILD)/cedos.img: $(GLOBAL_BUILD)/fat.img | $(MODULES)
 > dd if=$< of=$@ seek=8 conv=notrunc
 > dd bs=1 if=$(LOCAL_BUILD)/boot.bin of=$@ count=446 conv=notrunc
 > dd if=$(LOCAL_BUILD)/boot.bin of=$@ skip=1 seek=1 count=7 conv=notrunc
+> python3 binimg.py -w 256 -i $(GLOBAL_BUILD)/cedos.img -o $(GLOBAL_BUILD)/cedos.png
 > parted $@ print list all
 # > $(LD) 		$(OBJECTS) -T link.txt -Map=$(LOG_DIR)/bin_mapfile.txt --oformat binary --nostdlib  -o $@
 
@@ -110,7 +114,7 @@ clean:
 
 .PHONY: run
 run:
-> ./run.sh
+> ./run.sh $(GLOBAL_BUILD)/cedos.img
 
 .PHONY: docs
 docs:

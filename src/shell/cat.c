@@ -3,23 +3,21 @@
 
 #include <stdint.h>
 
-void main(char *args) {
-    int fd = sc_file_open(args, 0);
+#define BUFFER_SIZE 1024
 
-    if (fd < 0) {
+void main(char *args) {
+    FILE* file = fopen(args, "r");
+
+    if (file == NULL) {
         printf("Could not find file: %s\n", args);
         return;
     }
 
-    char *buffer = (void*)(0x2000000);
+    char buffer[BUFFER_SIZE];
 
-    int size = sc_file_read(fd, buffer, -1);
-
-    while (size > 0) {
-        int chunk = 256;
-        if (size < chunk) { chunk = size; }
-        sc_file_write(0, buffer, chunk);
-        size -= chunk;
-        buffer += chunk;
+    while (1) {
+        int size = fread(buffer, 1, 1024, file);
+        if (size == 0) { break; }
+        fwrite(buffer, 1, size, stdout);
     }
 }

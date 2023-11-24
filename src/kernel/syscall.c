@@ -8,10 +8,6 @@ void test(uint32_t ebx, uint32_t ecx, uint32_t edx) {
     printk("SYSCALL 0x01: EBX=%i ECX=%X EDX=%X\n", ebx, ecx, edx);
 }
 
-int __sysprint(const char *fmt, int arg1, int arg2) {
-    printk(fmt, arg1, arg2);
-}
-
 void* SYSCALL_TABLE[] = { 
         file_read,
         file_write,
@@ -20,7 +16,11 @@ void* SYSCALL_TABLE[] = {
         sched_spawn,
         sched_wait,
         file_open,
-        graphics_set_mode
+        graphics_set_mode,
+        hard_reset,
+        file_dir_next,
+        file_lseek,
+        file_tell
     };
 
 extern void syscall_interrupt(void);

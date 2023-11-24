@@ -31,7 +31,7 @@ EXCEPTION(double_fault_isr, frame, error_code) {
 }
 
 EXCEPTION(gpf_isr, frame, error_code) {
-    kpanic("CRITICAL: GENERAL PROTECTION FAULT");
+    kfault("CRITICAL: GENERAL PROTECTION FAULT", frame, error_code);
 }
 
 INTERRUPT(pic1_handler, frame) {

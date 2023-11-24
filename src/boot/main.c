@@ -16,6 +16,22 @@ void print_string(char *str) {
 }
 
 int load_kernel() {
+    // debug output
+    uint8_t *dbuf = (uint8_t *)(0x10000);
+    for (int i = 0; i < 16; i++) {
+        uint8_t value = dbuf[i];
+        char lut[] = "0123456789ABCDEF";
+
+        uint8_t low = value & 0x0F;
+        uint8_t high = value >> 4;
+
+        printc(lut[high]);
+        printc(lut[low]);
+        printc(' ');
+    }
+
+    //while (1);
+
     FAT_init();
 
     int i = 0;
@@ -38,10 +54,8 @@ int load_kernel() {
 
     // copy all clusters
     uint16_t cluster = first_cluster;
-    void *buffer = (void *)(0x100000);
+    uint8_t *buffer = (uint8_t *)(0x100000);
     while (1) {
-        uint8_t *str = (uint8_t*)(0xB8000);
-
         buffer = FAT_read_cluster(cluster, buffer);
         cluster = FAT_next_cluster(cluster);
         

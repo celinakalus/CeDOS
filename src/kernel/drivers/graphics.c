@@ -14,8 +14,10 @@ int graphics_init(void) {
     VIRT_ADDR dest = (VIRT_ADDR)(REALMD_VMA);
 
     memcpy(dest, src, size);
+    return 0;
 }
 
 int graphics_set_mode(int mode) {
     realmode_int10h((uint32_t)(mode), 0, 0);
+    return 0;
 }

@@ -1,6 +1,21 @@
+#include "cedos/file.h"
 #include "cedos/fat.h"
 #include "string.h"
+#include "assert.h"
+
+#include "cedos/mm/memory.h"
+
 #include <stdint.h>
+
+file_operations_t FAT_fops = {
+    NULL,           /* open */
+    FAT_openat,     /* openat */
+    FAT_read,       /* read */
+    NULL,           /* write */
+    FAT_dir_next,   /* dir_next */
+    FAT_lseek,      /* lseek */
+    FAT_tell        /* tell */
+};
 
 typedef struct {
     char jmp[3];
@@ -52,10 +67,9 @@ uint32_t FAT2_lba;
 uint32_t root_lba;
 uint32_t data_lba;
 
-void *FAT_init() {
+void FAT_init() {
     const int sector_size = 512;
     const int sector_num = 128;
-    const int part_size = sector_size * sector_num;
 
     // open image file
     FAT_addr = (void*)(0x10000);
@@ -91,7 +105,7 @@ void *FAT_read_cluster(uint16_t cluster, void *buffer) {
 }
 
 int FAT_root_dir_next(int index, char *fname_buffer, uint16_t *first_cluster, uint32_t *file_size) {
-    memset(fname_buffer, 0, sizeof(fname_buffer));
+    //memset(fname_buffer, 0, sizeof(fname_buffer));
 
     while (1) {
         // index overflow
@@ -109,7 +123,7 @@ int FAT_root_dir_next(int index, char *fname_buffer, uint16_t *first_cluster, ui
         }
 
         // deleted file
-        if (dir_entry->name[0] == 0xE5) {
+        if (dir_entry->name[0] == (char)(0xE5)) {
             index++;
             continue;
         }
@@ -138,7 +152,9 @@ int FAT_root_dir_next(int index, char *fname_buffer, uint16_t *first_cluster, ui
         }
 
         if (index == 0 && (dir_entry->file_attr & 0x08) && dir_entry->file_size == 0) {
-        // volume label
+            // volume label
+            index++;
+            continue;
 
         } else if ((dir_entry->file_attr & 0x10) && dir_entry->file_size == 0) {
         // subdirectory
@@ -167,11 +183,19 @@ int FAT_root_dir_next(int index, char *fname_buffer, uint16_t *first_cluster, ui
     }
 }
 
+int FAT_dir_next(file_t *file, int index, char *fname_buffer) {
+    uint16_t first_cluster;
+    uint32_t file_size;
+
+    // TODO: subdirectories
+    return FAT_root_dir_next(index, fname_buffer, &first_cluster, &file_size);
+}
+
 uint16_t FAT_next_cluster(uint16_t cluster) {
     // assuming FAT12
-    int offset = (cluster >> 1) * 3;
+    uint32_t *offset = (cluster >> 1) * 3;
     uint8_t *sect = FAT_read_sector_offset(FAT1_lba, &offset);
-    sect += offset;
+    sect += (uint32_t)(offset);
 
     if (cluster & 0x01) {
         uint16_t high = (uint16_t)(sect[2]);
@@ -184,16 +208,10 @@ uint16_t FAT_next_cluster(uint16_t cluster) {
     }
 }
 
-int FAT_openat(int fd, const char *fname, int flags) {
+int FAT_openat(file_t *root, file_t *handle, const char *fname, int flags) {
     int i = 0;
 
     // TODO: take fd into consideration (open file in that subdirectory)
-    
-    
-    if (!(fd & 0x1000)) { return -1; }
-
-    fd &= 0x0FFF;
-
     uint16_t first_cluster;
     while (1) {
         char buffer[832];
@@ -204,24 +222,73 @@ int FAT_openat(int fd, const char *fname, int flags) {
 
         if (strcmp(buffer, fname) == 0) {
             // file found
-            return first_cluster | 0x1000;
+            handle->pos = 0;
+            handle->size = file_size;
+            handle->fops = &FAT_fops;
+            handle->fat_cluster = first_cluster;
+            return 0;
         }
     }
 }
 
-uint32_t FAT_read(int fd, void *buffer, int count) {
-    if (!(fd & 0x1000)) { return -1; }
-    
-    uint16_t cluster = fd & 0xFFF;
+uint32_t FAT_read(file_t *file, uint8_t *buffer, uint32_t count) {
+    uint16_t cluster = file->fat_cluster;
+    fpos_t offset = file->pos;
+    size_t file_size = file->size;
     uint32_t size = 0;
 
-    while (1) {
-        buffer = FAT_read_cluster(cluster, buffer);
-        cluster = FAT_next_cluster(cluster);
-        size += boot_sect->bytes_per_sect * boot_sect->sect_per_cluster;
-        
-        if (cluster == 0xFFF || cluster == 0x000) { break; }
+    uint32_t cluster_size = boot_sect->bytes_per_sect * boot_sect->sect_per_cluster;
+    uint8_t *cluster_buffer = os_kernel_malloc(cluster_size);
+
+    if (offset + count > file_size) {
+        count = file_size - offset;
     }
 
+    while (offset >= cluster_size) {
+        cluster = FAT_next_cluster(cluster);
+        if (cluster == 0xFFF || cluster == 0x000) { return -1; }
+        offset -= cluster_size;
+    }
+
+    while (count > 0) {
+        if (cluster == 0xFFF || cluster == 0x000) { break; }
+
+        FAT_read_cluster(cluster, cluster_buffer);
+        cluster = FAT_next_cluster(cluster);
+
+        uint32_t memcpy_size;
+
+        if (offset + count > cluster_size) {
+            memcpy_size = (cluster_size - offset);
+        } else {
+            memcpy_size = count;
+        }
+
+        memcpy(buffer, (cluster_buffer + offset), memcpy_size);
+
+        offset = 0;
+        count -= memcpy_size;
+        buffer += memcpy_size;
+        size += memcpy_size;
+    }
+
+    file->pos += size;
+
     return size;
+}
+
+off_t FAT_lseek(file_t *file, off_t offset, int whence) {
+    if (whence == SEEK_SET) {
+        file->pos = offset;
+    } else if (whence == SEEK_CUR) {
+        file->pos += offset;
+    } else if (whence == SEEK_END) {
+        // to be implemented
+    } else {
+        kpanic("Wrong whence!");
+    }
+}
+
+off_t FAT_tell(file_t *file) {
+    return file->pos;
 }

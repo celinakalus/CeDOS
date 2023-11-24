@@ -64,7 +64,7 @@ void memdump(void* start, uint32_t size) {
         for (int j = 0; j < 0x10; j++) {
             uint8_t* p = (uint8_t*)(i | j);
             
-            if (p >= start && p < (start + size)) {
+            if (p >= (uint8_t*)(start) && p < (uint8_t*)(start + size)) {
                 printk_hex_char(*p);
                 core_con->write_c(' ');
             } else {
@@ -114,7 +114,6 @@ void printk(const char* fmt, ...) {
     crit_enter();
     va_list args;
     va_start(args, fmt);
-    uint32_t index = 0;
 
     enum {
         STATE_DEFAULT,
@@ -169,6 +168,18 @@ void kpanic(const char* string) {
     while (1) {}
 }
 
+void kfault(const char* string, INTERRUPT_FRAME *frame, uint16_t err_code) {
+    cli();
+    printk("%s\n", string);
+    printk("EIP:     %p\n", frame->eip);
+    printk("CS:      %p\n", frame->cs);
+    printk("EFLAGS:  %p\n", frame->eflags);
+    // register dump / stack dump
+    regdump();
+    stackdump();
+    while (1) {}
+}
+
 uint32_t crit_sect_counter = 0;
 uint32_t if_state = 0;
 
@@ -190,8 +201,8 @@ uint32_t crit_stash(void) {
     uint32_t __csc = crit_sect_counter;
     crit_sect_counter = 0;
     if (__csc > 0) {
-        uint32_t eflags = get_eflags() | if_state;
-        set_eflags(eflags);
+        if_state = get_eflags() & (1 << 9); 
+        sti();
     }
     return __csc;
 }
@@ -199,8 +210,8 @@ uint32_t crit_stash(void) {
 void crit_restore(uint32_t state) {
     crit_sect_counter = state;
     if (crit_sect_counter > 0) {
-        if_state = get_eflags() & (1 << 9); 
-        cli();
+        uint32_t eflags = get_eflags() | if_state;
+        set_eflags(eflags);
     }
 }
 

@@ -161,15 +161,29 @@ bl_loaded:
   ljmp $0x18, $protected
 
 
+myhexdump:
+  movb (%si), %al
+  call print_hex_char
+  inc %si
+  push %si
+  movw $space_msg, %si
+  call print
+  pop %si
+  loop myhexdump
+  movw $newline_msg, %si
+  call print
+  ret
+
+
 .code32
 protected:
   # setup registers with appropriate GDT values
   mov $0x20, %eax
+  mov %eax, %ss
   mov %eax, %ds
   mov %eax, %es
   mov %eax, %fs
   mov %eax, %gs
-  mov %eax, %ss
 
   call load_kernel
   
@@ -194,6 +208,15 @@ loop:
  
 
 .section .data 
+space_msg:
+  .ascii " "
+  .byte 0
+
+newline_msg:
+  .byte 13
+  .byte 10
+  .byte 0
+
 gdt_msg:
   .ascii "Setting GDT..."
   .byte 0
@@ -227,7 +250,7 @@ disabled_msg:
   .byte 0
 
 GDT_DESCRIPTOR:
-  .word 0x39
+  .word 0x37
   .int GDT
 
 IDT_DESCRIPTOR:

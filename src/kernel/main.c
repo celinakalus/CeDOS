@@ -7,6 +7,7 @@
 #include "cedos/sched/process.h"
 
 #include "cedos/mm/paging.h"
+#include "cedos/mm/memory.h"
 
 #include "cedos/interrupts.h"
 #include "cedos/syscall.h"
@@ -16,6 +17,7 @@
 
 #include "cedos/elf.h"
 
+#include "cedos/file.h"
 #include "cedos/fat.h"
 
 #include "linker.h"
@@ -53,6 +55,10 @@ int os_init(void) {
     sti();
     printk("done.\n");
 
+    printk("Initiallizing malloc...");
+    malloc_init();
+    printk("done.\n");
+
     printk("Installing syscalls...");
     syscall_init();
     printk("done.\n");
@@ -65,13 +71,17 @@ int os_init(void) {
     ps2_kb.init();
     printk("done.\n");
 
-    printk("Initializing root file system...");
+    printk("Initializing files...");
+    file_init();
+    printk("done.\n");
+
+    printk("Initializing FAT file system...");
     FAT_init();
-    printk("done.");
+    printk("done.\n");
 
     printk("Initializing graphics...");
     graphics_init();
-    printk("done.");
+    printk("done.\n");
 
 
     printk("Initialization finished.\n--------------\n");
@@ -116,41 +126,6 @@ void tasktree(PROCESS_ID pid) {
     }
 }
 
-int sysinit(void) {
-    uint8_t scancode = 0;
-
-    memdump((VIRT_ADDR)0x10000000, 0x3000);
-
-    //syscall(0, 0xCAFEBABE, 0xDEADBEEF, 0x42069420);
-
-    printk("PRESS ENTER:");
-
-    do {
-        scancode = ps2_kb.read();
-        printk("%c", scancode);
-    } while (scancode != 0x1C);
-
-    printk("THANKS, NOW PRESS ESC TO EXIT:");
-
-    do {
-        scancode = ps2_kb.read();
-        printk("%c", scancode);
-    } while (scancode != 0x01);
-
-    syscall(1, 0, 0, 0);
-    
-    //while (1) {
-    //    printk("x");
-    //    hlt();
-    //}
-
-    //sched_exec(create_empty_page_dir(), fibonacci, "fibonacci");
-    //sched_exec(create_empty_page_dir(), node, "node");
-    //while (get_process_count() < 5) { sched_yield(); }
-    //tasktree(1);
-    printk("Terminating.\n");
-}
-
 int os_main(void) {
     infodump();
 
@@ -158,7 +133,7 @@ int os_main(void) {
     printk("Creating tasks.\n");
     
     
-    int pid = sched_spawn("shelf", "Hello World!");
+    int pid = sched_spawn("shelf", "Hello World!", 0);
     assert(pid != -1);
     //sched_spawn("fibonacci.o", "Hello World!");
     //sched_spawn("fibonacci.o", "Hello World!");

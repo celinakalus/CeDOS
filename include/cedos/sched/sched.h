@@ -32,7 +32,7 @@ typedef struct {
 /*!
  * Spawns a new process, loads it from the given ELF file, and returns its process ID.
  */
-PROCESS_ID sched_spawn(const char *name, char *args);
+PROCESS_ID sched_spawn(const char *name, char *args, int flags);
 
 /*!
  * Return the ID of the current process.

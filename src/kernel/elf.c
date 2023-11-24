@@ -5,6 +5,8 @@
 #include "cedos/file.h"
 #include "cedos/sched/process.h"
 
+#include "cedos/mm/memory.h"
+
 #include "assert.h"
 
 #ifdef DEBUG
@@ -112,9 +114,8 @@ void elf_infodump(VIRT_ADDR elf_pointer, uint32_t size) {
 
     for (int i = 0; i < num_sections; i++) {
         SECT_HEADER sh = sect_headers[i];
-        char *name = (char*)(sect_names_addr + sh.name);
-
-        PRINT_DBG("Section:       %s\n", name);
+        
+        PRINT_DBG("Section:       %s\n", (char*)(sect_names_addr + sh.name));
         PRINT_DBG("- type:        %i\n", sh.type);
         PRINT_DBG("- offset:      %i\n", sh.offset);
         PRINT_DBG("- size:        %i\n", sh.size);
@@ -125,52 +126,70 @@ void elf_infodump(VIRT_ADDR elf_pointer, uint32_t size) {
 }
 
 PROCESS_ID elf_exec(const char *fname, char *args) {
+    crit_enter();
     PRINT_DBG("Loading ELF executable \"%s\".\n", fname);
-    VIRT_ADDR elf_addr = (VIRT_ADDR*)(0xA0000000);
     // TODO: needs to change when we have other file systems
     int fd = file_open(fname, 0);
-    assert(fd != -1);
-    int size = file_read(fd, elf_addr, 0);
-    assert(size != 0);
+    PRINT_DBG("File handle: %i\n", fd);
+    
+    if (fd == -1) {
+        printk("Executable file not found: %s\n", fname);
+        return -1;
+    }
+    //int size = file_read(fd, elf_addr, 0xFFFF);
+    //assert(size != 0);
 
-    ELF_HEADER *header = (ELF_HEADER*)(elf_addr);
+    ELF_HEADER header;
+    file_lseek(fd, 0, SEEK_SET);
+    int header_size = file_read(fd, (void*)(&header), sizeof(ELF_HEADER));
 
     // magic number correct
-    assert(((uint32_t*)(elf_addr))[0] == 0x464C457F);
+    assert(*(uint32_t*)(header.e_ident) == 0x464C457F);
 
     // header size correct
     assert(sizeof(ELF_HEADER) == 52);
+    assert(header_size == sizeof(ELF_HEADER));
 
     // get section table
-    int sh_offset = header->secthead_offset;
-    SECT_HEADER *sect_headers = (SECT_HEADER*)(elf_addr + sh_offset);
-    
-    int num_sections = header->sh_num;
-    int section_size = header->sh_entry_size;
+    int sh_offset = header.secthead_offset;
 
-    SECT_HEADER sect_names_sh = sect_headers[header->sh_strndx];
-    VIRT_ADDR sect_names_addr = elf_addr + sect_names_sh.offset;
+    SECT_HEADER sect_headers[16];
+    file_lseek(fd, sh_offset, SEEK_SET);
+    int sect_headers_size = file_read(fd, (void*)(&sect_headers), sizeof(sect_headers));
+
+    assert(sect_headers_size != 0);
+    
+    int num_sections = header.sh_num;
+    int section_size = header.sh_entry_size;
+
+    SECT_HEADER *sect_names_sh = &sect_headers[header.sh_strndx];
+    
+    char *sect_names = os_kernel_malloc(sect_names_sh->size);
+    file_lseek(fd, sect_names_sh->offset, SEEK_SET);
+    file_read(fd, sect_names, sect_names_sh->size);
 
     assert(sizeof(SECT_HEADER) == section_size);
 
     // go through all sections and copy/allocate memory as necessary
     PRINT_DBG("Enumerating %i sections:\n", num_sections);
     for (int i = 0; i < num_sections; i++) {
-        SECT_HEADER sh = sect_headers[i];
-        char *name = (char*)(sect_names_addr + sh.name);
+        SECT_HEADER *sh = &sect_headers[i];
+        char *name = (char*)(sect_names + sh->name);
 
-        if ((sh.flags & SHF_ALLOC) && (sh.flags & SHF_EXECINSTR)) {
-            VIRT_ADDR lma = elf_addr + sh.offset;
-            VIRT_ADDR vma = sh.addr;
-            uint32_t size = sh.size;
-            PRINT_DBG("%p\n", sh.flags);
+        if ((sh->flags & SHF_ALLOC) && (sh->flags & SHF_EXECINSTR)) {
+            uint32_t lma = sh->offset;
+            uint32_t vma = sh->addr;
+            uint32_t sect_size = sh->size;
+            PRINT_DBG("%p\n", sh->flags);
             PRINT_DBG("Copying code section %s to its destination ", name);
             PRINT_DBG("(LMA: %p, VMA: %p)\n", lma, vma);
 
-            memcpy(vma, lma, size);
-        } else if (sh.flags & SHF_ALLOC) {
-            VIRT_ADDR lma = elf_addr + sh.offset;
-            VIRT_ADDR vma = sh.addr;
+            file_lseek(fd, sh->offset, SEEK_SET);
+            int read_size = file_read(fd, vma, sect_size);
+            assert(sect_size == read_size);
+        } else if (sh->flags & SHF_ALLOC) {
+            uint32_t lma = sh->offset;
+            uint32_t vma = sh->addr;
             PRINT_DBG("Allocating space for section %s ", name);
             PRINT_DBG("(LMA: %p, VMA: %p)\n", lma, vma);
 
@@ -182,10 +201,11 @@ PROCESS_ID elf_exec(const char *fname, char *args) {
     
     PRINT_DBG("\n");
 
-    PRINT_DBG("Entry point: %p\n", header->entry);
+    PRINT_DBG("Entry point: %p\n", header.entry);
+    crit_exit();
 
     // enter the process
-    PROCESS_MAIN *entry = header->entry;
+    PROCESS_MAIN *entry = (PROCESS_MAIN*)(header.entry);
     entry(args);
 
     return 0;

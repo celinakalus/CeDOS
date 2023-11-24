@@ -8,6 +8,7 @@ PART_TABLE_START = 0x00007DBE;
 MEMORY
 {
   BOOT_VMA    :   ORIGIN = 0x00007C00, LENGTH = 0x00001000
+  BOOT_DATA   :   ORIGIN = 0x00009000, LENGTH = 0x00001000
   KERNEL_VMA  :   ORIGIN = 0xC0000000, LENGTH = 0x30000000
 }
 
@@ -20,7 +21,16 @@ SECTIONS
     BYTE(0x55)
     BYTE(0xAA)
     */*.o(.text)
-    */*.o(.data)
-    */*.o(.rodata*)
   } >BOOT_VMA
+
+  .data : 
+  {
+    */*.o(.rodata*)
+    */*.o(.data)
+  } >BOOT_VMA
+
+  .bss : 
+  {
+    */*.o(.bss)
+  } >BOOT_DATA
 }

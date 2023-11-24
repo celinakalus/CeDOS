@@ -3,6 +3,7 @@
 #include "cedos/sched/sched_strats.h"
 
 #include "cedos/mm/paging.h"
+#include "cedos/mm/memory.h"
 
 #include "cedos/drivers/console.h"
 #include "cedos/drivers/speaker.h"
@@ -12,6 +13,7 @@
 #include "cedos/pit.h"
 #include "cedos/pic.h"
 #include "cedos/elf.h"
+#include "cedos/file.h"
 
 #include "assembly.h"
 #include "assert.h"
@@ -19,7 +21,7 @@
 #define KERNEL_PRIVATE_STACK (void*)(0xC0600000)
 #define USER_STACK (void*)(0xC0000000)
 
-#define PROCESS_STD_EFLAGS (0x00000286)
+#define PROCESS_STD_EFLAGS (0x00000200)
 
 #ifdef DEBUG
 #define PRINT_DBG(...) printk("[" __FILE__ "] " __VA_ARGS__)
@@ -28,9 +30,8 @@
 #endif
 
 PROCESS* get_slot(void) {
-    static PROCESS free_slots[8];
-    static uint32_t index = 0;
-    return &(free_slots[index++]);
+    PROCESS *new_process = (PROCESS*)os_kernel_malloc(sizeof(PROCESS));
+    return new_process;
 }
 
 PROCESS_ID current_pid;
@@ -44,15 +45,19 @@ int sched_dispatcher(void);
 
 void entry_idle(char *args) {
     while (1) { 
-         
+        hlt();
     }
 }
 
 /*!
  * Spawn a new process and returns its process ID.
  */
-PROCESS_ID sched_spawn(const char *name, char *args) {
+PROCESS_ID sched_spawn(const char *name, char *args, int flags) {
     crit_enter();
+
+    PRINT_DBG("process name: %s\n", name);
+    PRINT_DBG("process args: %s\n", args);
+    PRINT_DBG("process flags: %i\n", flags);
 
     if (name != NULL) {
         int fd = file_open(name, 0);
@@ -64,18 +69,31 @@ PROCESS_ID sched_spawn(const char *name, char *args) {
     // set process context
     PROCESS *p = get_slot();
     p->page_dir = page_dir;
-    p->eip = sched_dispatcher;
     p->ebp = USER_STACK;
     p->esp = USER_STACK - sizeof(SCHED_FRAME);
     p->eflags = PROCESS_STD_EFLAGS;
-    p->entry = 0xDEADBEEF;
+    p->entry = (PROCESS_MAIN*)(0xDEADBEEF);
+    
+    if (name == NULL) {
+        p->eip = entry_idle;
+    } else {
+        p->eip = sched_dispatcher;
+    }
+
+    if (flags != 0) {
+        p->stdin = (int)(flags & 0xFF);
+        p->stdout = (int)(flags >> 8);
+    } else {
+        p->stdin = 0;
+        p->stdout = 1;
+    }
     
     // TODO: implement with malloc
     strcpy(p->name_buf, name);
     strcpy(p->args_buf, args);
 
-    p->name = &(p->name_buf);
-    p->args = &(p->args_buf);
+    p->name = (const char*)&(p->name_buf);
+    p->args = (const char*)&(p->args_buf);
 
     PROCESS_ID pid = add_process(p, current_pid);
     p->id = pid;
@@ -84,16 +102,11 @@ PROCESS_ID sched_spawn(const char *name, char *args) {
     static SCHED_FRAME frame;
     frame.eax = frame.ebx = frame.ecx = frame.edx = 0;
     frame.esi = frame.edi = 0;
-    frame.ebp = p->ebp;
-    frame.esp = p->esp;
+    frame.ebp = (uint32_t)(p->ebp);
+    frame.esp = (uint32_t)(p->esp);
     frame.eflags = p->eflags;
     frame.cs = 0x18;
-
-    if (name == NULL) {
-        frame.eip = entry_idle;
-    } else {
-        frame.eip = sched_dispatcher;
-    }
+    frame.eip = (uint32_t)(p->eip);
 
     // load stack
     copy_to_pdir(&frame, sizeof(frame), p->page_dir, p->esp);
@@ -117,9 +130,9 @@ void sched_interrupt_c(SCHED_FRAME * volatile frame, uint32_t volatile ebp) {
     PROCESS* current = get_process(current_pid);
 
     if (current_pid != 0) {
-        current->esp = (uint32_t)frame;
-        current->ebp = ebp;
-        current->eip = frame->eip;
+        current->esp = (VIRT_ADDR)(frame);
+        current->ebp = (VIRT_ADDR)(ebp);
+        current->eip = (VIRT_ADDR)frame->eip;
         current->eflags = frame->eflags;
 
         
@@ -149,29 +162,39 @@ void sched_interrupt_c(SCHED_FRAME * volatile frame, uint32_t volatile ebp) {
     PROCESS* next = get_process(current_pid);
     switch_page_dir(next->page_dir);
 
+    PRINT_DBG("esp: %p\n", next->esp);
+    PRINT_DBG("ebp: %p\n", next->ebp);
+    PRINT_DBG("eip: %p\n", next->eip);
+    PRINT_DBG("eflags: %p\n", next->eflags);
+
     STACK_CHECKSUM checksum;
     stack_compute_checksum(&(checksum), next->esp, next->ebp);
 
     // check stack
     if (stack_compare_checksum(&(next->checksum), &(checksum))) {
         printk("STACK DAMAGED: PROCESS %i (%s), ESP %X, EBP %X\n", current_pid, get_process(current_pid)->name, next->esp, next->ebp);
-        memdump((void*)(next->esp), (void*)(next->ebp - next->esp));
+        memdump((void*)(next->esp), (void*)((uint32_t)(next->ebp) - (uint32_t)(next->esp)));
         kpanic("CRITICAL STACK DAMAGE");
     }
 
     // prepare stack
     frame = (volatile SCHED_FRAME*)(next->esp);
     ebp = next->ebp;
-    //frame->cs = 0x08;
-    //frame->eip = next->eip;
-    frame->eflags = next->eflags;
-    frame->esp = next->esp;
-    frame->ebp = next->ebp;
+
+    if (current_pid == 0) {
+        frame->cs = 0x18;
+        frame->eip = next->eip;
+        frame->eflags = (uint32_t)(next->eflags);
+        frame->esp = (uint32_t)(next->esp);
+        frame->ebp = (uint32_t)(next->ebp);
+    }
+
+    PRINT_DBG("esp: %p, ebp: %p, eip: %p, eflags: %p\n", frame->esp, frame->ebp, frame->eip, frame->eflags);
 
 
     // reset the timer
     pit_setup_channel(PIT_CHANNEL_0, PIT_MODE_0, SCHED_INTERVAL);
-
+    
     pic1_eoi();
 }
 
@@ -184,7 +207,7 @@ int sched_init(void) {
     current_pid = 0;
 
     // create idle process
-    PROCESS_ID idle = sched_spawn(NULL, NULL);
+    PROCESS_ID idle = sched_spawn(NULL, NULL, 0);
     assert(idle != -1);
 
     return 1;
@@ -237,8 +260,6 @@ int sched_kill(PROCESS_ID pid) {
 void sched_wait(PROCESS_ID pid) {
     assert(pid != current_pid);
 
-    if (pid < 0) { return; }
-
     while (1) {
         PROCESS *p = get_process(pid);
         if (p == NULL || p->state == PSTATE_TERMINATED) { break; }
@@ -253,6 +274,8 @@ int sched_start(void) {
     // perform the first timer interrupt manually
     pic_unmask_interrupt(0);
     INT(0x20);
+
+    return 0;
 }
 
 int sched_stop(void) {
@@ -262,6 +285,8 @@ int sched_stop(void) {
 
     // disable interrupts
     pic_mask_interrupt(0);
+
+    return 0;
 }
 
 int sched_dispatcher(void) {
@@ -279,4 +304,6 @@ int sched_dispatcher(void) {
 
     // just for absolute safety
     kpanic("Executing a terminated process!!\n");
+
+    return 0;
 }

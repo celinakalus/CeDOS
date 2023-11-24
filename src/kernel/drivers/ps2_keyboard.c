@@ -3,6 +3,7 @@
 #include "cedos/pic.h"
 #include "cedos/core.h"
 #include "cedos/sched/sched.h"
+#include "cedos/mm/memory.h"
 #include "assembly.h"
 
 #define PS2_DATA				0x60
@@ -47,8 +48,8 @@ KB_DRIVER ps2_kb = {
     ps2_kb_read
 };
 
-uint8_t buffer[BUFFER_LENGTH];
-uint32_t buffer_head, buffer_tail;
+uint8_t *buffer;
+volatile uint32_t buffer_head, buffer_tail;
 
 __attribute__((always_inline)) inline void buffer_enqueue(uint8_t value) {
     buffer[buffer_head] = value;
@@ -79,6 +80,11 @@ __attribute__((interrupt)) void keyboard_int_handler(INTERRUPT_FRAME *frame) {
 }
 
 int ps2_kb_init(void) {
+    buffer_head = 0;
+    buffer_tail = 0;
+
+    buffer = os_kernel_malloc(BUFFER_LENGTH);
+
     // clear incoming data
     inb(PS2_DATA);
 
@@ -104,7 +110,7 @@ int ps2_kb_init(void) {
 
 uint8_t ps2_kb_read(void) {
     while (buffer_empty()) {
-        PRINT_DBG("yield.\n");
+        //PRINT_DBG("yield.\n");
         sched_yield();
     }
 

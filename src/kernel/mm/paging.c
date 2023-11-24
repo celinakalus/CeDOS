@@ -66,8 +66,6 @@ void mount_page_dir(PHYS_ADDR page_dir) {
 int force_map_page_to(PHYS_ADDR page_addr, uint32_t dir_index, uint32_t table_index, uint32_t flags) {
     PAGE_DIR_ENTRY* page_dir = PAGE_DIR_ALT_MAPPED_ADDR;
     PAGE_TABLE_ENTRY* page_table = PAGE_TABLE_ALT_MAPPED_ADDR(dir_index);
-    
-    int tmp = 0;
 
     if (!is_present(page_dir[dir_index])) {
         // acquire new page table
@@ -83,7 +81,7 @@ int force_map_page_to(PHYS_ADDR page_addr, uint32_t dir_index, uint32_t table_in
 
 int map_page_to(PHYS_ADDR page_addr, uint32_t dir_index, uint32_t table_index, uint32_t flags) {
     if (is_addr_available(dir_index, table_index)) {
-        force_map_page_to(page_addr, dir_index, table_index, flags);
+        return force_map_page_to(page_addr, dir_index, table_index, flags);
     } else {
         return 0;
     }
@@ -107,14 +105,14 @@ int force_map_page_to_this(PHYS_ADDR page_addr, uint32_t dir_index, uint32_t tab
 
 int map_page_to_this(PHYS_ADDR page_addr, uint32_t dir_index, uint32_t table_index, uint32_t flags) {
     if (is_addr_available(dir_index, table_index)) {
-        force_map_page_to_this(page_addr, dir_index, table_index, flags);
+        return force_map_page_to_this(page_addr, dir_index, table_index, flags);
     } else {
         return 0;
     }
 }
 
 size_t copy_to_pdir(VIRT_ADDR src, size_t length, PHYS_ADDR pdir, VIRT_ADDR dest) {
-    VIRT_ADDR mount_dest = 0xe0000000;
+    VIRT_ADDR mount_dest = (VIRT_ADDR)(0xe0000000);
     mount_page_dir(pdir);
     PHYS_ADDR page;
 
@@ -136,6 +134,8 @@ size_t copy_to_pdir(VIRT_ADDR src, size_t length, PHYS_ADDR pdir, VIRT_ADDR dest
         src += part_length;
         length -= part_length;
     }
+
+    return dest;
 }
 
 int map_range_to(PHYS_ADDR page_dir, VIRT_ADDR dest, PHYS_ADDR src, uint32_t page_count, uint32_t flags) {
@@ -194,20 +194,26 @@ PHYS_ADDR create_empty_page_dir(void) {
 
     // map kernel
     page_dir[PAGE_DIR_INDEX(0xc0000000)] = PAGE_DIR_MAPPED_ADDR[PAGE_DIR_INDEX(0xc0000000)];
+    page_dir[PAGE_DIR_INDEX(0xc0400000)] = PAGE_DIR_MAPPED_ADDR[PAGE_DIR_INDEX(0xc0400000)];
 
     return page_dir_phys;
 }
 
+#define PAGE_FAULT_FLAGS_PRESENT (1 << 0)
+
 EXCEPTION(page_fault_isr, frame, error_code) {
     volatile VIRT_ADDR faulty_addr;
     __asm__ volatile ("mov %%cr2, %0" : "=a" (faulty_addr));
-    //if (PAGE_DIR_INDEX(faulty_addr) >= PAGE_ENTRY_COUNT - 2) { return; }
-    PRINT_DBG("PAGE FAULT: %X\n", faulty_addr);
-    PHYS_ADDR new_page = get_free_page();
-    force_map_page_to_this(new_page, PAGE_DIR_INDEX(faulty_addr), PAGE_TABLE_INDEX(faulty_addr), PAGE_TABLE_FLAGS);
-    // dump registers to stdout
+    
+    if (error_code & PAGE_FAULT_FLAGS_PRESENT) {
+        kpanic("Page-protection violation!");
+    } else {
+        PHYS_ADDR new_page = get_free_page();
+        force_map_page_to_this(new_page, PAGE_DIR_INDEX(faulty_addr), PAGE_TABLE_INDEX(faulty_addr), PAGE_TABLE_FLAGS);
+    }
 }
 
 int paging_init(void) {
     install_interrupt(0x0e, page_fault_isr, 0x18, TRAP_GATE);
+    return 0;
 }

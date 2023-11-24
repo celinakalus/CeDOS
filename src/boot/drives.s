@@ -101,6 +101,9 @@ reset_drive_loop:
   movw $reset_msg, %si
   call print
 
+  lea bootdriv_id, %si
+  movb (%si), %dl
+
   movb $0x00, %ah
   int $0x13
   pop %cx
@@ -142,19 +145,26 @@ load_sectors_loop:
 
   movw %bx, %di
 
+  # divide LBA by number of sectors
   lea num_sectors, %si
+  xor %dx, %dx
   movw (%si), %bx
-  # inc %ax
-  divb %bl
-  movb %ah, %cl
+  divw %bx
+
+  andw $0x003F, %dx
+  movb %dl, %cl
   incb %cl
 
-  xor %ah, %ah
+  xor %dx, %dx
   lea num_heads, %si
   movw (%si), %bx
-  divb %bl
-  movb %ah, %dh
+  divw %bx
   movb %al, %ch
+  movb %ah, %al
+  xorb %ah, %ah
+  shl $6, %al
+  orb %al, %cl
+  movb %dl, %dh
 
   lea bootdriv_id, %si
   movb (%si), %dl
@@ -315,6 +325,7 @@ newline:
   .byte 13
   .byte 10
   .byte 0
+
 
 .section .bss
 .global bootdriv_id
