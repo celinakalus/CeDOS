@@ -143,6 +143,11 @@ PROCESS_ID elf_exec(const char *fname, char *args) {
     file_lseek(fd, 0, SEEK_SET);
     int header_size = file_read(fd, (void*)(&header), sizeof(ELF_HEADER));
 
+    if (header_size != sizeof(ELF_HEADER)) {
+        printk("Error while reading executable.\n");
+        return -1;
+    }
+
     // magic number correct
     assert(*(uint32_t*)(header.e_ident) == 0x464C457F);
 
@@ -152,21 +157,38 @@ PROCESS_ID elf_exec(const char *fname, char *args) {
 
     // get section table
     int sh_offset = header.secthead_offset;
+    int sh_num = header.sh_num;
+
+    assert(header.sh_entry_size == sizeof(SECT_HEADER));
 
     SECT_HEADER sect_headers[16];
     file_lseek(fd, sh_offset, SEEK_SET);
-    int sect_headers_size = file_read(fd, (void*)(&sect_headers), sizeof(sect_headers));
+    int sect_headers_size = file_read(fd, (void*)(&sect_headers), sizeof(SECT_HEADER) * sh_num);
 
-    assert(sect_headers_size != 0);
-    
+    if (sect_headers_size != sizeof(SECT_HEADER) * sh_num) {
+        printk("Error while reading executable.\n");
+        return -1;
+    }
+
     int num_sections = header.sh_num;
     int section_size = header.sh_entry_size;
 
     SECT_HEADER *sect_names_sh = &sect_headers[header.sh_strndx];
     
     char *sect_names = os_kernel_malloc(sect_names_sh->size);
+
+    if (sect_names == NULL) {
+        printk("Error while starting executable: Memory allocation failed.\n");
+        return -1;
+    }
+
     file_lseek(fd, sect_names_sh->offset, SEEK_SET);
-    file_read(fd, sect_names, sect_names_sh->size);
+    int sect_names_size = file_read(fd, sect_names, sect_names_sh->size);
+
+    if (sect_names_size != sect_names_sh->size) {
+        printk("Error while reading executable.\n");
+        return -1;
+    }
 
     assert(sizeof(SECT_HEADER) == section_size);
 
@@ -186,7 +208,11 @@ PROCESS_ID elf_exec(const char *fname, char *args) {
 
             file_lseek(fd, sh->offset, SEEK_SET);
             int read_size = file_read(fd, vma, sect_size);
-            assert(sect_size == read_size);
+            
+            if (read_size != sect_size) {
+                printk("Error while reading executable.\n");
+                return -1;
+            }
         } else if (sh->flags & SHF_ALLOC) {
             uint32_t lma = sh->offset;
             uint32_t vma = sh->addr;
