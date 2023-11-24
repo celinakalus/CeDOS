@@ -39,53 +39,61 @@ uint32_t convert_endian(uint32_t value) {
     return res;
 }
 
-void draw_image(uint8_t *imgbuff, int off_x, int off_y, int width, int height) {
-    uint8_t *gbuff = (uint8_t*)(0xA0000);
-
-    for (int x = 0; x < MIN(width, 320); x++) {
-        for (int y = 0; y < MIN(height, 240); y++) {
-            int img_i = (height - y) * width + x;
-            int g_i = y * 320 + x;
-
-            gbuff[g_i] = imgbuff[img_i];
-        }
-    }
-}
-
 void main(char *args) {
     // open image file
-    int fd = sc_file_open(args, 0);
+    int fd = fopen(args, "r");
 
     if (fd < 0) {
         printf("Could not find file: %s\n", args);
         return;
     }
 
-    uint8_t *fbuff = (uint8_t*)(0x2000000);
-
-    int size = sc_file_read(fd, fbuff, -1);
     int limit = 320 * 240;
 
-    BMP_FILE_HEADER *bmp_header = (BMP_FILE_HEADER*)(fbuff);
-    DIB_HEADER *dib_header = (DIB_HEADER*)(&(bmp_header[1]));
+    BMP_FILE_HEADER bmp_header;
+    DIB_HEADER dib_header;
 
-    int offset = bmp_header->offset_pixelarray;
-    int width = dib_header->image_width;
-    int height = dib_header->image_height;
+    int size = 0;
 
-    uint8_t *imgbuff = fbuff + offset;
+    size = fread(&bmp_header, sizeof(bmp_header), 1, fd);
+    if (size != sizeof(bmp_header)) { printf("Error while reading BMP header\n"); return; }
+
+    size = fread(&dib_header, sizeof(dib_header), 1, fd);
+    if (size != sizeof(dib_header)) { printf("Error while reading DIB header\n"); return; }
+
+    int offset = bmp_header.offset_pixelarray;
+    int width = dib_header.image_width;
+    int height = dib_header.image_height;
+
+    uint8_t rowbuf[512];
 
     int off_x = 0;
     int off_y = 0;
 
+    fseek(fd, offset, SEEK_SET);
+
     // switch video mode and display image
     graphics_set_mode(GMODE_VIDEO);
 
-    draw_image(imgbuff, off_x, off_y, width, height);
+    uint8_t *gbuff = (uint8_t*)(0xA0000);
+
+    for (int y = 0; y < MIN(height, 240); y++) {
+        size = fread(rowbuf, sizeof(uint8_t), width, fd);
+
+        if (size != width) {
+            graphics_set_mode(GMODE_TEXT);
+            printf("Error while reading row %i.", y);
+        }
+
+        for (int x = 0; x < MIN(width, 320); x++) {
+            int g_i = (239 - y) * 320 + x;
+
+            gbuff[g_i] = rowbuf[x];
+        }
+    }
 
     while (1) {
-        char c;
-        sc_file_read(0, &c, 1);
+        char c = getchar();
         if (c == 0x1B) { break; }
     }
 
