@@ -5,13 +5,12 @@ Simple x86 operating system written in assembly and C.
 * GNU make
 * [https://wiki.osdev.org/GCC_Cross-Compiler](GCC Cross Compiler + matching binutils), tailored for freestanding i686-elf-targets
 * Doxygen: If you want to build the documentation
-* QEMU: To emulate an x86 system
+* QEMU: To emulate an x86 system. More specifically, `qemu-system-i386`, available via apt.
 
 ## Make commands
-### Debug build
-```make debug```
+Release builds are the default. For debug builds, use `make DEBUG=1 [...]`. You will need to add `DEBUG=1` to all commands, including `run`, otherwise, the release version is run.
 
-### Release build
+### Build
 ```make build```
 
 ### Run (in an emulator)
