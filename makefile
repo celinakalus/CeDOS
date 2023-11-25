@@ -56,7 +56,7 @@ export GLOBAL_BUILD
 
 MODULES := boot kernel libcedos shell
 OBJECTS := $(patsubst %,$(LOCAL_BUILD)/%.o,$(MODULES)) $(LOCAL_BUILD)/apps_raw.o
-DIRS := $(LOCAL_BUILD)
+DIRS := $(LOCAL_BUILD) $(LOG_DIR)
 
 $(MODULES): | $(DIRS)
 $(DIRS):
@@ -73,7 +73,7 @@ $(GLOBAL_BUILD)/fat.img: $(MODULES)
 > sudo mount $@ ./mnt
 > sudo cp $(LOCAL_BUILD)/kernel.bin ./mnt
 > sudo cp $(LOCAL_BUILD)/bin/* ./mnt
-> sudo cp ./img-contents/* ./mnt
+> sudo cp ./img-contents/* ./mnt || echo "No img-contents folder; Skipping."
 > du -csh ./mnt/*
 > sudo umount ./mnt
 
