@@ -35,12 +35,12 @@ int fgetc ( FILE * stream ) {
     int retval;
     char c = 0;
     retval = fread(&c, 1, 1, stream);
-
-    if (retval == 1) {
-        return (int)(c);
-    } else {
-        return EOF;
+    while (retval == 0) {
+        yield();
+        retval = fread(&c, 1, 1, stream);
     }
+
+    return (int)(c);
 }
 
 int fputs ( const char * str, FILE * stream ) {

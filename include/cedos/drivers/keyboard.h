@@ -25,7 +25,7 @@ typedef struct {
      * Reads a single character from the keyboard
      * \return A single char corresponding to a key press.
      */
-    uint8_t (*read)(void);
+    int (*read)(void);
 } KB_DRIVER;
 
 //! PS/2 keyboard driver (default driver)
