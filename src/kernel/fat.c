@@ -67,10 +67,10 @@ uint32_t FAT2_lba;
 uint32_t root_lba;
 uint32_t data_lba;
 
-void FAT_init() {
-    const int sector_size = 512;
-    const int sector_num = 128;
+uint8_t *cluster_buffer;
+uint32_t cluster_size;
 
+void FAT_init() {
     // open image file
     FAT_addr = (void*)(0x10000);
 
@@ -82,6 +82,9 @@ void FAT_init() {
 
     long root_dir_size = boot_sect->max_root_dir_entries * sizeof(DIR_ENTRY);
     data_lba = root_lba + (root_dir_size / boot_sect->bytes_per_sect);
+    
+    cluster_size = boot_sect->bytes_per_sect * boot_sect->sect_per_cluster;
+    cluster_buffer = os_kernel_malloc(cluster_size);
 }
 
 void *FAT_read_sector_offset(uint32_t lba, uint32_t *offset) {
@@ -236,9 +239,6 @@ uint32_t FAT_read(file_t *file, uint8_t *buffer, uint32_t count) {
     fpos_t offset = file->pos;
     size_t file_size = file->size;
     uint32_t size = 0;
-
-    uint32_t cluster_size = boot_sect->bytes_per_sect * boot_sect->sect_per_cluster;
-    uint8_t *cluster_buffer = os_kernel_malloc(cluster_size);
 
     if (offset + count > file_size) {
         count = file_size - offset;
