@@ -47,7 +47,7 @@ void main(char *args) {
         char *args = (char *)(0);
 
         int i = 0;
-        while (1) {
+        while (buffer[i]) {
             if (buffer[i] == ' ') {
                 buffer[i] = 0;
                 args = &(buffer[i+1]);
