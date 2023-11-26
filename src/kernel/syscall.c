@@ -3,6 +3,7 @@
 #include "cedos/sched/sched.h"
 #include "cedos/file.h"
 #include "cedos/drivers/graphics.h"
+#include "cedos/time.h"
 
 void test(uint32_t ebx, uint32_t ecx, uint32_t edx) {
     printk("SYSCALL 0x01: EBX=%i ECX=%X EDX=%X\n", ebx, ecx, edx);
@@ -20,7 +21,8 @@ void* SYSCALL_TABLE[] = {
         hard_reset,
         file_dir_next,
         file_lseek,
-        file_tell
+        file_tell,
+        time_get_ticks,
     };
 
 extern void syscall_interrupt(void);

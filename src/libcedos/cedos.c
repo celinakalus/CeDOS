@@ -83,3 +83,10 @@ int dir_next(int fd, int index, char *fname_buffer) {
     interrupt(0x30, res, 9, fd, index, fname_buffer);
     return res;
 }
+
+int sc_time_get_ticks(void) {
+    volatile int res = 0;
+    interrupt(0x30, res, 12, 0, 0, 0);
+    return res;
+}
+

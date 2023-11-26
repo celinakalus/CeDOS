@@ -10,7 +10,8 @@
 
 #include "cedos/mm/paging.h"
 
-#define SCHED_INTERVAL (0xFFFF)
+// 11928 ~ 10ms per interval
+#define SCHED_INTERVAL (11928)
 
 /*!
  * Structure of the process stack when the scheduler is executed.
