@@ -4,6 +4,7 @@
 #include "cedos/file.h"
 #include "cedos/drivers/graphics.h"
 #include "cedos/time.h"
+#include "cedos/mm/page_allocator.h"
 
 void test(uint32_t ebx, uint32_t ecx, uint32_t edx) {
     printk("SYSCALL 0x01: EBX=%i ECX=%X EDX=%X\n", ebx, ecx, edx);
@@ -23,6 +24,7 @@ void* SYSCALL_TABLE[] = {
         file_lseek,
         file_tell,
         time_get_ticks,
+        mem_usage
     };
 
 extern void syscall_interrupt(void);

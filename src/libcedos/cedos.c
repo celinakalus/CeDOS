@@ -90,3 +90,8 @@ int sc_time_get_ticks(void) {
     return res;
 }
 
+uint32_t sc_mem_usage(void) {
+    volatile int res = 0;
+    interrupt(0x30, res, 13, 0, 0, 0);
+    return res;
+}

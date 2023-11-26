@@ -25,5 +25,7 @@ void hard_reset();
 int dir_next(int fd, int index, char *fname_buffer);
 
 int sc_time_get_ticks(void);
+uint32_t sc_mem_usage(void);
+
 
 #endif
