@@ -1,5 +1,6 @@
 #include "cedos.h"
 #include "stdio.h"
+#include "string.h"
 
 #include <stdint.h>
 
@@ -58,6 +59,11 @@ void main(char *args) {
         }
 
         //printf("Executing %s...\n", buffer);
+
+        if (strcmp(file, "exit") == 0) {
+            printf("Thank you for using ShELF!\n");
+            break;
+        }
 
         int pid = process_spawn(file, args);
 
