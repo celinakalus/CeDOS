@@ -1,21 +1,44 @@
 #include "cedos.h"
 #include "stdio.h"
 #include "string.h"
+#include "stdlib.h"
 
 #include <stdint.h>
 
-int read_line(char *buffer) {
+struct hist_item {
+    char* buffer;
+    struct hist_item* next;
+};
+
+struct hist_item* hist_first = NULL;
+
+char* read_line() {
     int i = 0;
     char c;
+
+    char* buffer = malloc(512);
     buffer[0] = 0;
+
+    struct hist_item* history = hist_first;
+    
     while (1) {
         c = getchar();
 
-        if (c == '\n') { break; }
-        if (c == 0) { continue; }
-        if (c == 0x08 && i <= 0) { continue; }
-
-        if (c == 0x08) {
+        if (c == '\n') {
+            break;
+        } else if (c == 0) {
+            continue;
+        } else if (c == 0x08 && i <= 0) {
+            continue;
+        } else if (c == '^' && getchar() == '[' && getchar() == 'A') {
+            if (history == NULL) { continue; }
+            strcpy(buffer, history->buffer);
+            while (i) { putchar(0x08); i--; }
+            i = strlen(buffer);
+            puts(buffer);
+            history = history->next;
+            continue;
+        } else if (c == 0x08) {
             buffer[--i] = 0;
             putchar(c);
         } else {
@@ -27,7 +50,18 @@ int read_line(char *buffer) {
     buffer[i] = 0;
     putchar(c);
 
-    return i;
+    if (i > 0) {
+        // append command history
+        struct hist_item* next = malloc(sizeof(struct hist_item));
+        next->buffer = buffer;
+        next->next = hist_first;
+        hist_first = next;
+    }
+
+    char *ret_buf = malloc(512);
+    strcpy(ret_buf, buffer);
+
+    return ret_buf;
 }
 
 void main(char *args) {
@@ -39,10 +73,9 @@ void main(char *args) {
     while (1) {
         printf("/> ");
 
-        char buffer[256];
-        int length = read_line(buffer);
+        char* buffer = read_line(buffer, hist_first);
 
-        if (length == 0) { continue; }
+        if (strlen(buffer) == 0) { continue; }
 
         char *file = buffer;
         char *args = (char *)(0);
@@ -63,6 +96,15 @@ void main(char *args) {
         if (strcmp(file, "exit") == 0) {
             printf("Thank you for using ShELF!\n");
             break;
+        } else if (strcmp(file, "history") == 0) {
+            struct hist_item* item = hist_first;
+
+            while (item) {
+                printf("%s\n", item->buffer);
+                item = item->next;
+            }
+
+            continue;
         }
 
         int pid = process_spawn(file, args);
