@@ -52,6 +52,11 @@ CCFLAGS				:= $(CCFLAGS) -O1
 GLOBAL_BUILD 		:= $(GLOBAL_BUILD)/release
 endif
 
+ifndef VERBOSE
+.SILENT:
+> echo "Silent mode active."
+endif
+
 BUILD_OBJECTS 		:= $(GLOBAL_BUILD)/obj
 BUILD_ARTIFACTS		:= $(GLOBAL_BUILD)/artifacts
 BUILD_LOGS			:= $(GLOBAL_BUILD)/logs
@@ -71,6 +76,9 @@ DIRS := $(sort $(DIRS))
 
 $(DIRS):
 > $(MKDIR) $@
+ifndef VERBOSE
+> echo "MKDIR   $@"
+endif
 
 .PHONY: build
 build: $(BUILD_ARTIFACTS)/cedos.img
@@ -78,6 +86,9 @@ $(OBJECTS): $(DIRS)
 
 $(BUILD_OBJECTS)/%.s.o: %.s
 > $(AS) -o $@ $<
+ifndef VERBOSE
+> echo "AS      $@"
+endif
 
 # common
 OBJ_COMMON := $(filter $(BUILD_OBJECTS)/common/%,$(OBJECTS))
@@ -91,12 +102,21 @@ OUT_BOOT := $(BUILD_ARTIFACTS)/boot.elf $(BUILD_ARTIFACTS)/boot.bin
 
 $(BUILD_OBJECTS)/boot/%.c.o: boot/%.c
 > $(CC) -c -Iboot -Icommon $(CCFLAGS) -o $@ $<
+ifndef VERBOSE
+> echo "CC      $@"
+endif
 
 $(BUILD_ARTIFACTS)/boot.elf: $(OBJ_BOOT) $(OBJ_COMMON)
 > $(LD) $^ -T boot/link.txt -Map=$(BUILD_LOGS)/boot_mapfile.txt --oformat elf32-i386 -o $@
+ifndef VERBOSE
+> echo "LD      $@"
+endif
 
 $(BUILD_ARTIFACTS)/boot.bin: $(OBJ_BOOT) $(OBJ_COMMON)
 > $(LD) $^ -T boot/link.txt -Map=$(BUILD_LOGS)/boot_mapfile.txt --oformat binary -o $@
+ifndef VERBOSE
+> echo "LD      $@"
+endif
 
 .PHONY: boot
 boot: $(OUT_BOOT)
@@ -108,12 +128,21 @@ OUT_KERNEL := $(BUILD_ARTIFACTS)/kernel.elf $(BUILD_ARTIFACTS)/kernel.bin
 
 $(BUILD_OBJECTS)/kernel/%.c.o: kernel/%.c
 > $(CC) -c -Ikernel -Icommon $(CCFLAGS) -o $@ $<
+ifndef VERBOSE
+> echo "CC      $@"
+endif
 
 $(BUILD_ARTIFACTS)/kernel.elf: $(OBJ_KERNEL) $(OBJ_COMMON)
 > $(LD) $^ -T kernel/link.txt -Map=$(BUILD_LOGS)/kernel_mapfile.txt --oformat elf32-i386 -o $@
+ifndef VERBOSE
+> echo "LD      $@"
+endif
 
 $(BUILD_ARTIFACTS)/kernel.bin: $(OBJ_KERNEL) $(OBJ_COMMON)
 > $(LD) $^ -T kernel/link.txt -Map=$(BUILD_LOGS)/kernel_mapfile.txt --oformat binary -o $@
+ifndef VERBOSE
+> echo "LD      $@"
+endif
 
 .PHONY: kernel
 kernel: $(OUT_KERNEL)
@@ -125,9 +154,15 @@ OUT_LIBCEDOS := $(BUILD_ARTIFACTS)/libcedos.a
 
 $(BUILD_OBJECTS)/libcedos/%.c.o: libcedos/%.c
 > $(CC) -c -Ilibcedos -Icommon $(CCFLAGS) -o $@ $<
+ifndef VERBOSE
+> echo "CC      $@"
+endif
 
 $(BUILD_ARTIFACTS)/libcedos.a: $(OBJ_LIBCEDOS) $(OBJ_COMMON)
 > $(AR) rcs $@ $^
+ifndef VERBOSE
+> echo "AR      $@"
+endif
 
 .PHONY: libcedos
 libcedos: $(OUT_LIBCEDOS)
@@ -147,9 +182,15 @@ SHELL_LDFLAGS += -N
 
 $(BUILD_OBJECTS)/shell/%.c.o: shell/%.c
 > $(CC) -c -Ishell -Ilibcedos -Icommon $(CCFLAGS) $(SHELL_CCFLAGS) -o $@ $<
+ifndef VERBOSE
+> echo "CC      $@"
+endif
 
 $(BUILD_ARTIFACTS)/%: $(BUILD_OBJECTS)/shell/%.c.o | $(BUILD_ARTIFACTS)/libcedos.a
 > $(LD) $^ $(LDFLAGS) $(SHELL_LDFLAGS) -o $@ 
+ifndef VERBOSE
+> echo "LD      $@"
+endif
 
 .PHONY: shell
 shell: $(OUT_SHELL)
@@ -167,6 +208,9 @@ $(BUILD_ARTIFACTS)/fat.img: $(filter %.bin,$(OUT_KERNEL)) $(OUT_SHELL) | $(BUILD
 > du -csh $(BUILD_MOUNT)/*
 > sudo umount $(BUILD_MOUNT)
 > rm -r $(BUILD_MOUNT)
+ifndef VERBOSE
+> echo "MKFS    $@"
+endif
 
 $(BUILD_ARTIFACTS)/cedos.img: $(BUILD_ARTIFACTS)/fat.img | $(MODULES) 
 > dd if=/dev/zero of=$@ count=904
@@ -179,7 +223,9 @@ $(BUILD_ARTIFACTS)/cedos.img: $(BUILD_ARTIFACTS)/fat.img | $(MODULES)
 > python3 binimg.py -w 256 -i $(BUILD_ARTIFACTS)/cedos.img -o $(BUILD_ARTIFACTS)/cedos.png
 > parted $@ print list all
 # > $(LD) 		$(OBJECTS) -T link.txt -Map=$(BUILD_LOGS)/bin_mapfile.txt --oformat binary --nostdlib  -o $@
-
+ifndef VERBOSE
+> echo "MKPART  $@"
+endif
 
 .PHONY: logs
 logs: $(BUILD_LOGS)/base.sym $(BUILD_LOGS)/objdump.txt
