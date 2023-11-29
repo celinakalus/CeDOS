@@ -20,8 +20,14 @@ FILE* fopen(const char*, const char*);
 int fputc ( int character, FILE * stream );
 int fputs ( const char * str, FILE * stream );
 
+int putc ( int character );
+int puts ( const char * str );
+
 int fgetc ( FILE * stream );
 char * fgets ( char * str, int num, FILE * stream );
+
+int getc ( void );
+char * gets ( char * str, int num );
 
 int getchar ( void );
 int putchar ( int character );

@@ -31,6 +31,10 @@ int fputc ( int character, FILE * stream ) {
     }
 }
 
+int putc ( int character ) {
+    return fputc(character, stdout);
+}
+
 int fgetc ( FILE * stream ) {
     int retval;
     char c = 0;
@@ -43,6 +47,10 @@ int fgetc ( FILE * stream ) {
     return (int)(c);
 }
 
+int getc ( void ) {
+    return fgetc(stdin);
+}
+
 int fputs ( const char * str, FILE * stream ) {
     int i = 0;
 
@@ -51,6 +59,10 @@ int fputs ( const char * str, FILE * stream ) {
     fwrite(str, 1, i, stream);
 
     return i;
+}
+
+int puts ( const char * str ) {
+    return fputs(str, stdout);
 }
 
 char * fgets ( char * str, int num, FILE * stream ) {
@@ -63,6 +75,10 @@ char * fgets ( char * str, int num, FILE * stream ) {
     }
 
     return i + 1;
+}
+
+char * gets ( char * str, int num ) {
+    return fgets(str, num, stdin);
 }
 
 int getchar ( void ) {
