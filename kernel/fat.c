@@ -2,6 +2,7 @@
 #include "fat.h"
 #include "string.h"
 #include "assert.h"
+#include "core.h"
 
 #include "mm/memory.h"
 

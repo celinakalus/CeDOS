@@ -1,10 +1,10 @@
 #ifndef ASSERT_H
 #define ASSERT_H
 
-#include "core.h"
-
 #include <stdint.h>
 
-#define assert(cond) if (!(cond)) { kpanic("Assertion failed: " #cond); }
+extern void assert_failed(const char * message);
+
+#define assert(cond) if (!(cond)) { assert_failed("Assertion failed: " #cond); }
 
 #endif

@@ -15,6 +15,12 @@ void print_string(char *str) {
     }
 }
 
+void assert_failed(const char * message) {
+    print_string(message);
+
+    while (1) {}
+}
+
 int load_kernel() {
     // debug output
     uint8_t *dbuf = (uint8_t *)(0x10000);

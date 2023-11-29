@@ -229,3 +229,7 @@ int core_init(void) {
     core_con = std_con;
     return core_con->init();
 }
+
+void assert_failed(const char * message) {
+    kpanic(message);
+}
