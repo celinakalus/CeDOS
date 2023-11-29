@@ -105,10 +105,12 @@ int sprint_hex_char(uint8_t c, char *buffer) {
 
 int sprint_uint32(uint32_t value, char *buffer) {
     uint8_t* mem = (uint8_t*)(&value);
+    int res = 0;
     for (int i = 0; i < 4; i++) {
-        sprint_hex_char(mem[3-i], buffer);
+        res += sprint_hex_char(mem[3-i], buffer);
         buffer += 2;
     }
+    return res;
 }
 
 int rek_sprint_uint(unsigned int value, char *buffer) {
