@@ -5,7 +5,7 @@
 #include "file.h"
 #include "sched/process.h"
 
-#include "mm/memory.h"
+#include "memory.h"
 
 #include "assert.h"
 
@@ -175,7 +175,7 @@ PROCESS_ID elf_exec(const char *fname, char *args) {
 
     SECT_HEADER *sect_names_sh = &sect_headers[header.sh_strndx];
     
-    char *sect_names = os_kernel_malloc(sect_names_sh->size);
+    char *sect_names = malloc(sect_names_sh->size);
 
     if (sect_names == NULL) {
         printk("Error while starting executable: Memory allocation failed.\n");

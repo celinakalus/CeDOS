@@ -5,7 +5,7 @@
 #include "drivers/tty.h"
 #include "core.h"
 
-#include "mm/memory.h"
+#include "memory.h"
 
 #include "sched/sched.h"
 #include "sched/process.h"
@@ -24,7 +24,7 @@ int next_free = 0;
 int stdin, stdout, fat_root, pipe;
 
 int file_init() {
-    file_table = os_kernel_malloc(sizeof(file_t) * 512);
+    file_table = malloc(sizeof(file_t) * 512);
 
     file_table[next_free].fops = &tty_fops;
     file_table[next_free].stdio_id = 0;

@@ -3,7 +3,7 @@
 #include "sched/sched_strats.h"
 
 #include "mm/paging.h"
-#include "mm/memory.h"
+#include "memory.h"
 
 #include "drivers/console.h"
 #include "drivers/speaker.h"
@@ -30,7 +30,7 @@
 #endif
 
 PROCESS* get_slot(void) {
-    PROCESS *new_process = (PROCESS*)os_kernel_malloc(sizeof(PROCESS));
+    PROCESS *new_process = (PROCESS*)malloc(sizeof(PROCESS));
     return new_process;
 }
 

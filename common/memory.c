@@ -1,4 +1,4 @@
-#include "mm/memory.h"
+#include "memory.h"
 
 #include "assert.h"
 
@@ -9,9 +9,9 @@ struct memblock {
 
 volatile struct memblock volatile *malloc_first, *malloc_last, *malloc_next_free;
 
-int malloc_init() {
-    uint32_t mem_start = 0xC0400000u;
-    uint32_t mem_end = 0xC0800000u;
+int malloc_init(void *start, void *end) {
+    uint32_t mem_start = (uint32_t)(start);
+    uint32_t mem_end = (uint32_t)(end);
 
     malloc_first = (volatile struct memblock*)(mem_start);
     malloc_last = (volatile struct memblock*)(mem_end - sizeof(struct memblock));
@@ -22,6 +22,8 @@ int malloc_init() {
 
     malloc_last->size = 0;
     malloc_last->next = NULL;
+
+    return 0;
 }
 
 /*!
@@ -29,7 +31,7 @@ int malloc_init() {
  * \param size Size in bytes of the requested block of memory.
  * \return Memory address to the new memory block
  */
-void* os_kernel_malloc(size_t size) {
+void* malloc(size_t size) {
     // size == 0 means the block is free
     assert(malloc_next_free->size == 0);
 
@@ -61,7 +63,7 @@ void* os_kernel_malloc(size_t size) {
  * Frees a previously allocated block of memory. (KERNEL MODE)
  * \param ptr Pointer to the memory block to be freed.
  */
-void os_kernel_free(void* ptr) {
+void free(void* ptr) {
     
 }
 

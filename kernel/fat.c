@@ -4,7 +4,7 @@
 #include "assert.h"
 #include "core.h"
 
-#include "mm/memory.h"
+#include "memory.h"
 
 #include <stdint.h>
 
@@ -85,7 +85,7 @@ void FAT_init() {
     data_lba = root_lba + (root_dir_size / boot_sect->bytes_per_sect);
     
     cluster_size = boot_sect->bytes_per_sect * boot_sect->sect_per_cluster;
-    cluster_buffer = os_kernel_malloc(cluster_size);
+    cluster_buffer = malloc(cluster_size);
 }
 
 void *FAT_read_sector_offset(uint32_t lba, uint32_t *offset) {

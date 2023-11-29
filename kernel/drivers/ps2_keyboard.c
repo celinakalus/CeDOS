@@ -3,7 +3,7 @@
 #include "pic.h"
 #include "core.h"
 #include "sched/sched.h"
-#include "mm/memory.h"
+#include "memory.h"
 #include "assembly.h"
 
 #define PS2_DATA				0x60
@@ -83,7 +83,7 @@ int ps2_kb_init(void) {
     buffer_head = 0;
     buffer_tail = 0;
 
-    buffer = os_kernel_malloc(BUFFER_LENGTH);
+    buffer = malloc(BUFFER_LENGTH);
 
     // clear incoming data
     inb(PS2_DATA);

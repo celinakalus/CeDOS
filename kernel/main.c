@@ -7,7 +7,7 @@
 #include "sched/process.h"
 
 #include "mm/paging.h"
-#include "mm/memory.h"
+#include "memory.h"
 
 #include "interrupts.h"
 #include "syscall.h"
@@ -56,7 +56,7 @@ int os_init(void) {
     printk("done.\n");
 
     printk("Initiallizing malloc...");
-    malloc_init();
+    malloc_init(0xC0400000u, 0xC0800000u);
     printk("done.\n");
 
     printk("Installing syscalls...");
