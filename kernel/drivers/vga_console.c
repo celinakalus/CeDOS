@@ -112,7 +112,34 @@ int vga_con_init(void) {
 }
 
 void vga_con_write_c(const char c) {
-    if (c == 0x08) {
+    static enum {
+        NORMAL = 0,
+        ESCAPE_START = 1,
+        ESCAPE_N = 2,
+        ESCAPE_M = 3,
+        ESCAPE_C = 4
+    } state;
+    static int n, m;
+
+    if (c == '\e') {
+        // beginning of escape sequence
+        state = ESCAPE_START;
+        n = 0;
+        m = 0;
+    } else if (state == ESCAPE_START && c == '[') {
+        state = ESCAPE_N;
+    } else if (state == ESCAPE_N && c >= '0' && c <= '9') {
+        n = n * 10 + (c - '0');
+    } else if (state == ESCAPE_N && c == 'm') {
+        if (n < 38) {
+            color = n - 30;
+        } else if (n < 98) {
+            color = n - 90 + 8;
+        }
+        state = NORMAL;
+    } else if (state != NORMAL) {
+        state = NORMAL;
+    } else if (c == 0x08) {
         vga_con_backspace();
         set_cursor(line, column);
     } else {
