@@ -2,6 +2,7 @@
 #define FAT12_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 typedef struct {
     // logical block addresses of FAT regions

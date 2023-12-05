@@ -1,7 +1,6 @@
 #include "paging.h"
 #include "linker.h"
 #include "string.h"
-#include "fat.h"
 
 
 void *create_kernel_environment() {
