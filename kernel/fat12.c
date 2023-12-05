@@ -1,6 +1,9 @@
-#include "fat.h"
-#include "string.h"
+#include "fat12.h"
+
 #include <stdint.h>
+#include <stddef.h>
+
+#include "string.h"
 
 typedef struct {
     char jmp[3];
@@ -44,75 +47,67 @@ typedef struct {
 } __attribute__((packed)) VFAT_LFN_ENTRY;
 
 
-void *FAT_addr;
-BOOT_SECT *boot_sect;
+/**
+ * @brief 
+*/
+void FAT12_init(FAT12_descriptor_t *fat) {
+    BOOT_SECT boot_sect;
+    FAT12_read(0, NULL, sizeof(boot_sect), &boot_sect);
 
-uint32_t FAT1_lba;
-uint32_t FAT2_lba;
-uint32_t root_lba;
-uint32_t data_lba;
+    // copy FAT parameters from boot sector into fat descriptor
+    fat->bytes_per_sect         = boot_sect.bytes_per_sect;
+    fat->log_sect_per_fat       = boot_sect.log_sect_per_fat;
+    fat->max_root_dir_entries   = boot_sect.max_root_dir_entries;
+    fat->media_desc             = boot_sect.media_desc;
+    fat->num_FAT                = boot_sect.num_FAT;
+    fat->num_reserved_sectors   = boot_sect.num_reserved_sectors;
+    fat->sect_per_cluster       = boot_sect.sect_per_cluster;
+    fat->total_log_sectors      = boot_sect.total_log_sectors;
 
-void FAT_init() {
-    // open image file
-    FAT_addr = (void*)(0x10000);
+    // calculate starting addresses of FAT regions
+    fat->FAT1_lba = fat->num_reserved_sectors;
+    fat->FAT2_lba = fat->FAT1_lba + fat->log_sect_per_fat;
+    fat->root_lba = fat->FAT1_lba + (fat->log_sect_per_fat * fat->num_FAT);
 
-    boot_sect = (BOOT_SECT*)(FAT_addr);
-
-    FAT1_lba = boot_sect->num_reserved_sectors;
-    FAT2_lba = FAT1_lba + boot_sect->log_sect_per_fat;
-    root_lba = FAT1_lba + (boot_sect->log_sect_per_fat * boot_sect->num_FAT);
-
-    long root_dir_size = boot_sect->max_root_dir_entries * sizeof(DIR_ENTRY);
-    data_lba = root_lba + (root_dir_size / boot_sect->bytes_per_sect);
+    long root_dir_size = fat->max_root_dir_entries * sizeof(DIR_ENTRY);
+    fat->data_lba = fat->root_lba + (root_dir_size / fat->bytes_per_sect);
+    
+    // calculate cluster size
+    fat->cluster_size = fat->bytes_per_sect * fat->sect_per_cluster;
 }
 
-void *FAT_read_sector_offset(uint32_t lba, uint32_t *offset) {
-    if (offset != NULL) {
-        lba += (*offset) / boot_sect->bytes_per_sect;
-        *offset = (*offset) % boot_sect->bytes_per_sect;
-    }
-
-    return (void*)((long)(FAT_addr) + (long)(lba * boot_sect->bytes_per_sect));
+void *FAT12_read_cluster(FAT12_descriptor_t *fat, uint16_t cluster, void *buffer) {
+    return FAT12_read(fat->data_lba + ((cluster - 2) * fat->sect_per_cluster), NULL, fat->cluster_size, buffer);
 }
 
-void *FAT_read_cluster(uint16_t cluster, void *buffer) {
-    // TODO: perform memcpy
-    void *addr = FAT_read_sector_offset(data_lba + ((cluster - 2) * boot_sect->sect_per_cluster), NULL);
-
-    uint32_t cluster_size = boot_sect->bytes_per_sect * boot_sect->sect_per_cluster;
-
-    memcpy(buffer, addr, cluster_size);
-
-    return (void*)((uint8_t*)(buffer) + cluster_size);
-}
-
-int FAT_root_dir_next(int index, char *fname_buffer, uint16_t *first_cluster, uint32_t *file_size) {
+int FAT12_root_dir_next(FAT12_descriptor_t *fat, int index, char *fname_buffer, uint16_t *first_cluster, uint32_t *file_size) {
     memset(fname_buffer, 0, sizeof(fname_buffer));
 
     while (1) {
+        //printk("%i\n", index);
         // index overflow
-        if (index >= boot_sect->max_root_dir_entries) {
+        if (index >= fat->max_root_dir_entries) {
             return -1;
         }
 
         uint32_t offset = index * sizeof(DIR_ENTRY);
-        void *sect = FAT_read_sector_offset(root_lba, &offset);
-        DIR_ENTRY *dir_entry = (DIR_ENTRY *)((uint32_t)(sect) + offset);
+        DIR_ENTRY dir_entry;
+        FAT12_read(fat->root_lba, &offset, sizeof(DIR_ENTRY), &dir_entry);
 
         // if first character of name is 0, then no subsequent entry is in use
-        if (dir_entry->name[0] == 0x00) { 
+        if (dir_entry.name[0] == 0x00) { 
             return -1; 
         }
 
         // deleted file
-        if (dir_entry->name[0] == (char)(0xE5)) {
+        if (dir_entry.name[0] == (char)(0xE5)) {
             index++;
             continue;
         }
 
         // VFAT LFN entry
-        if (dir_entry->file_attr == 0x0F && dir_entry->start_of_clusters == 0 && dir_entry->file_size != 0) {
-            VFAT_LFN_ENTRY *lfn_entry = (VFAT_LFN_ENTRY*)(dir_entry);
+        if (dir_entry.file_attr == 0x0F && dir_entry.start_of_clusters == 0 && dir_entry.file_size != 0) {
+            VFAT_LFN_ENTRY *lfn_entry = (VFAT_LFN_ENTRY*)(&dir_entry);
 
             int offset = 13 * ((lfn_entry->seq_num & 0x3F) - 1);
 
@@ -133,12 +128,12 @@ int FAT_root_dir_next(int index, char *fname_buffer, uint16_t *first_cluster, ui
             continue;
         }
 
-        if (index == 0 && (dir_entry->file_attr & 0x08) && dir_entry->file_size == 0) {
+        if (index == 0 && (dir_entry.file_attr & 0x08) && dir_entry.file_size == 0) {
             // volume label
             index++;
             continue;
 
-        } else if ((dir_entry->file_attr & 0x10) && dir_entry->file_size == 0) {
+        } else if ((dir_entry.file_attr & 0x10) && dir_entry.file_size == 0) {
         // subdirectory
 
         } else {
@@ -146,17 +141,17 @@ int FAT_root_dir_next(int index, char *fname_buffer, uint16_t *first_cluster, ui
 
         }
 
-        *file_size = dir_entry->file_size;
-        *first_cluster = dir_entry->start_of_clusters;
+        *file_size = dir_entry.file_size;
+        *first_cluster = dir_entry.start_of_clusters;
 
         // if no VFAT LFN exists, use DOS name
         if (fname_buffer[0] == 0) {
             for (int i = 0; i < 8; i++) {
-                fname_buffer[i] = dir_entry->name[i];
+                fname_buffer[i] = dir_entry.name[i];
             }
             fname_buffer[8] = '.';
             for (int i = 0; i < 3; i++) {
-                fname_buffer[i + 9] = dir_entry->ext[i];
+                fname_buffer[i + 9] = dir_entry.ext[i];
             }
             fname_buffer[12] = 0;
         }
@@ -165,11 +160,11 @@ int FAT_root_dir_next(int index, char *fname_buffer, uint16_t *first_cluster, ui
     }
 }
 
-uint16_t FAT_next_cluster(uint16_t cluster) {
+uint16_t FAT12_next_cluster(FAT12_descriptor_t *fat, uint16_t cluster) {
     // assuming FAT12
     uint32_t offset = (cluster >> 1) * 3;
-    uint8_t *sect = FAT_read_sector_offset(FAT1_lba, &offset);
-    sect += offset;
+    uint8_t sect[3];
+    FAT12_read(fat->FAT1_lba, &offset, sizeof(sect), sect);
 
     if (cluster & 0x01) {
         uint16_t high = (uint16_t)(sect[2]);
