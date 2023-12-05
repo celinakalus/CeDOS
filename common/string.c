@@ -52,3 +52,19 @@ int strcmp(const char *str1, const char *str2) {
         i++;
     }
 }
+
+const char * strchr ( const char * str, int character ) {
+    int i = 0;
+
+    while (1) {
+        if (str[i] == 0) {
+            return NULL;
+        }
+
+        if (str[i] == character) {
+            return &(str[i]);
+        }
+
+        i++;
+    }
+}
