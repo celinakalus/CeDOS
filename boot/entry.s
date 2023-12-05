@@ -186,6 +186,9 @@ protected:
   mov %eax, %gs
 
   call load_kernel
+
+  test %eax, %eax
+  jnz loop
   
   # create a page directory for the kernel that maps it to 0xC0000000
   # and identity maps the first 1M of memory
