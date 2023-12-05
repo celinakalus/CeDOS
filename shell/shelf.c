@@ -64,6 +64,9 @@ char* read_line() {
     return ret_buf;
 }
 
+int async[32];
+int async_index;
+
 void main(char *args) {
     uint32_t a = 0, b = 1, i = 0;
     printf("\n");
@@ -78,20 +81,13 @@ void main(char *args) {
         if (strlen(buffer) == 0) { continue; }
 
         char *file = buffer;
-        char *args = (char *)(0);
-
-        int i = 0;
-        while (buffer[i]) {
-            if (buffer[i] == ' ') {
-                buffer[i] = 0;
-                args = &(buffer[i+1]);
-                break;
-            }
-
-            i++;
+        char *args = strchr(file, ' ');
+        char *amp = strchr(file, '.');
+        
+        if (args != NULL) {
+            args[0] = 0;
+            args++;
         }
-
-        //printf("Executing %s...\n", buffer);
 
         if (strcmp(file, "exit") == 0) {
             printf("Thank you for using ShELF!\n");
@@ -113,6 +109,10 @@ void main(char *args) {
 
         if (pid == -1) {
             printf("File not found: %s\n", buffer);
+        } else if (amp != NULL) {
+            printf("[%i] %i\n", async_index, pid);
+
+            async[async_index++] = pid;
         } else {
             process_wait(pid);
         }
