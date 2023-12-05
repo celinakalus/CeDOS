@@ -11,6 +11,7 @@ int get_pid();
 int process_spawn(const char *fname, const char *args);
 int process_spawn_pipe(const char *fname, const char *args, int stdin, int stdout);
 void process_wait(int pid);
+void process_kill(int pid);
 
 void graphics_set_mode(int mode);
 

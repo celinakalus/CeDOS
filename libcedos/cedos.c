@@ -95,3 +95,8 @@ uint32_t sc_mem_usage(void) {
     interrupt(0x30, res, 13, 0, 0, 0);
     return res;
 }
+
+void process_kill(int pid) {
+    volatile uint32_t res = 0;
+    interrupt(0x30, res, 14, pid, 0, 0);
+}
