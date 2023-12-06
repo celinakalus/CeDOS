@@ -200,7 +200,7 @@ shell: $(OUT_SHELL)
 $(BUILD_ARTIFACTS)/fat.img: $(filter %.bin,$(OUT_KERNEL)) $(OUT_SHELL) | $(BUILD_ARTIFACTS)/boot.bin
 # > $(LD) 		$(OBJECTS) -r -T link.txt -Map=$(BUILD_LOGS)/elf_mapfile.txt --oformat elf32-i386 -o $@
 > dd if=/dev/zero of=$@ count=896
-> mkfs.fat -n "cedos" -S 512 -s 8 -r 32  $@
+> mkfs.fat -n "cedos" -S 512 -s 8 -r 64  $@
 > mkdir -p $(BUILD_MOUNT)
 > sudo mount $@ $(BUILD_MOUNT)
 > sudo cp $^ $(BUILD_MOUNT)
