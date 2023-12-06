@@ -8,7 +8,7 @@
 void main(char *args) {
     FILE* file = fopen(args, "r");
 
-    if (file == NULL) {
+    if (file == -1) {
         printf("Could not find file: %s\n", args);
         return;
     }
