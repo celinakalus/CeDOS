@@ -9,6 +9,7 @@
 #define VGA_TEXTMODE_LINE_WIDTH (VGA_TEXTMODE_COLUMNS * VGA_TEXTMODE_BPC)
 #define VGA_TEXTMODE_CELLS (VGA_TEXTMODE_COLUMNS * VGA_TEXTMODE_LINES)
 #define VGA_MEM_POS(line, column) ((line) * VGA_TEXTMODE_COLUMNS * VGA_TEXTMODE_BPC + (column) * VGA_TEXTMODE_BPC)
+#define VGA_MEM_CELL(line, column) ((line) * VGA_TEXTMODE_COLUMNS + (column))
 
 #define VGA_TEXTMODE_MEM ((uint8_t*)0xB8000)
 #define VGA_MEM_VALUE(line, column) (VGA_TEXTMODE_MEM[VGA_MEM_POS((line), (column))])
@@ -26,7 +27,8 @@ int vga_con_init(void);
 void vga_con_write_c(const char c);
 void vga_con_write_n(const char *string, uint32_t num);
 void vga_con_write_s(const char *string);
-void vga_con_clear(void);
+void vga_con_clear(int mode);
+void vga_con_clear_line(int mode);
 void vga_con_newline(void);
 void vga_con_backspace(void);
 
@@ -98,7 +100,7 @@ void enable_cursor(void) {
 }
 
 int vga_con_init(void) {
-    vga_con_clear();
+    vga_con_clear(2);
     
     enable_cursor();
     set_cursor(line, column);
@@ -144,16 +146,10 @@ void vga_con_write_c(const char c) {
         //set_cursor(line, column);
         state = NORMAL;
     } else if (state == ESCAPE_N && c == 'J') {
-        switch (n) {
-        default:
-        case 0:
-            // clear from cursor to end of screen
-        case 1:
-            // clear from beginning of screen to cursor
-        case 2:
-            // clear whole display
-            vga_con_clear();
-        }
+        vga_con_clear(n);
+        state = NORMAL;
+    } else if (state == ESCAPE_N && c == 'K') {
+        vga_con_clear_line(n);
         state = NORMAL;
     } else if (state == ESCAPE_N && c == 'm') {
         uint8_t color_compat[8] = { 0x00, 0x04, 0x02, 0x06, 0x01, 0x05, 0x03, 0x07 };
@@ -196,10 +192,57 @@ void vga_con_write_s(const char *string) {
     set_cursor(line, column);
 }
 
-void vga_con_clear(void) {
+void vga_con_clear_line(int mode) {
+    // clear from cursor to end of screen
+    // clear from beginning of screen to cursor
+    // clear whole display
+    int start, end;
+    
+    switch(mode) {
+    case 0:
+        start = column;
+        end = VGA_TEXTMODE_COLUMNS;
+        break;
+    case 1:
+        start = 0;
+        end = column;
+        break;
+    default:
+    case 2:
+        start = 0;
+        end = VGA_TEXTMODE_COLUMNS;
+        break;
+    }
+
+    for (int i = start; i < end; i++) {
+        VGA_MEM_VALUE(line, i) = 0;
+        VGA_MEM_COLOR(line, i) = color;
+    }
+}
+
+void vga_con_clear(int mode) {
+    int cursor_pos = VGA_MEM_CELL(line, column);
+    int start, end;
+
+    switch(mode) {
+    case 0:
+        start = cursor_pos;
+        end = VGA_TEXTMODE_CELLS;
+        break;
+    case 1:
+        start = 0;
+        end = cursor_pos;
+        break;
+    default:
+    case 2:
+        start = 0;
+        end = VGA_TEXTMODE_CELLS;
+        break;
+    }
+
     for (int i = 0; i < VGA_TEXTMODE_CELLS; i++) {
         VGA_TEXTMODE_MEM[2 * i] = 0;
-        VGA_TEXTMODE_MEM[2 * i + 1] = 0;
+        VGA_TEXTMODE_MEM[2 * i + 1] = color;
     }
     
     line = 0;
