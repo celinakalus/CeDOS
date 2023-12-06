@@ -156,9 +156,18 @@ void vga_con_write_c(const char c) {
         }
         state = NORMAL;
     } else if (state == ESCAPE_N && c == 'm') {
-        if (n < 38) {
-            color = n - 30;
-        } else if (n < 98) {
+        uint8_t color_compat[8] = { 0x00, 0x04, 0x02, 0x06, 0x01, 0x05, 0x03, 0x07 };
+        if (n == 0) {
+            color = 0x0F;
+        } else if (n >= 30 && n <= 37) {
+            color = (color & 0xF0) | color_compat[n - 30];
+        } else if (n >= 40 && n <= 47) {
+            color = (color & 0x0F) | (color_compat[n - 40] << 4);
+        } else if (n >= 90 && n <= 97) {
+            color = (color & 0xF0) | (color_compat[n - 90] + 8);
+        } else if (n >= 100 && n <= 107) {
+            color = (color & 0x0F) | ((color_compat[n - 100] + 8) << 4);
+        } else if (n < 106) {
             color = n - 90 + 8;
         }
         state = NORMAL;
