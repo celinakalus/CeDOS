@@ -121,7 +121,7 @@ void vga_con_write_c(const char c) {
     } state;
     static int n, m;
 
-    if (c == '\e') {
+    if (state == NORMAL && c == '\e') {
         // beginning of escape sequence
         state = ESCAPE_START;
         n = 0;
@@ -130,6 +130,31 @@ void vga_con_write_c(const char c) {
         state = ESCAPE_N;
     } else if (state == ESCAPE_N && c >= '0' && c <= '9') {
         n = n * 10 + (c - '0');
+    } else if (state == ESCAPE_M && c >= '0' && c <= '9') {
+        m = m * 10 + (c - '0');
+    } else if (state == ESCAPE_N && c == ';') {
+        state = ESCAPE_M;
+    } else if (state == ESCAPE_N && c == 'G') {
+        column = n;
+        set_cursor(line, column);
+        state = NORMAL;
+    } else if (state == ESCAPE_M && c == 'H') {
+        line = n;
+        column = m;
+        set_cursor(line, column);
+        state = NORMAL;
+    } else if (state == ESCAPE_N && c == 'J') {
+        switch (n) {
+        default:
+        case 0:
+            // clear from cursor to end of screen
+        case 1:
+            // clear from beginning of screen to cursor
+        case 2:
+            // clear whole display
+            vga_con_clear();
+        }
+        state = NORMAL;
     } else if (state == ESCAPE_N && c == 'm') {
         if (n < 38) {
             color = n - 30;
