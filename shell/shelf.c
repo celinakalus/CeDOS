@@ -101,6 +101,9 @@ void main(char *args) {
             }
 
             continue;
+        } else if (strcmp(file, "clear") == 0) {
+            printf("\e[2J");
+            continue;
         }
 
         int pid = process_spawn(file, args);
