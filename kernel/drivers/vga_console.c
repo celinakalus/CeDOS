@@ -136,12 +136,12 @@ void vga_con_write_c(const char c) {
         state = ESCAPE_M;
     } else if (state == ESCAPE_N && c == 'G') {
         column = n;
-        set_cursor(line, column);
+        //set_cursor(line, column);
         state = NORMAL;
     } else if (state == ESCAPE_M && c == 'H') {
         line = n;
         column = m;
-        set_cursor(line, column);
+        //set_cursor(line, column);
         state = NORMAL;
     } else if (state == ESCAPE_N && c == 'J') {
         switch (n) {
@@ -166,16 +166,16 @@ void vga_con_write_c(const char c) {
         state = NORMAL;
     } else if (c == 0x08) {
         vga_con_backspace();
-        set_cursor(line, column);
+        //set_cursor(line, column);
     } else {
         write_char(c);
-        set_cursor(line, column);
+        //set_cursor(line, column);
     }
 }
 
 void vga_con_write_n(const char *string, uint32_t num) {
     for (uint32_t i = 0; i < num; i++) {
-        write_char(string[0]);
+        vga_con_write_c(string[i]);
     }
     set_cursor(line, column);
 }

@@ -56,8 +56,6 @@ int tty_read(int fd, char *buffer, uint32_t size) {
 }
 
 int tty_write(int fd, char *buffer, uint32_t size) {
-    for (uint32_t i = 0; i < size; i++) {
-        std_con->write_c(buffer[i]);
-    }
+    std_con->write_n(buffer, size);
     return size;
 }
