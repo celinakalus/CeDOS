@@ -79,6 +79,8 @@ int file_openat(int fd, const char *fname, int flags) {
     file_t *root = get_process_local_file(fd);
     file_t *handle = &file_table[new_fd];
 
+    if (fd < 0) { return -1; }
+
     if (root->fops->openat == NULL) { return -1; }
 
     if (root->fops->openat(root, handle, fname, flags)) { return -1; }
@@ -87,6 +89,8 @@ int file_openat(int fd, const char *fname, int flags) {
 }
 
 int file_read(int fd, char *buffer, uint32_t size) {
+    if (fd < 0) { return 0; }
+
     file_t *file = get_process_local_file(fd);
 
     if (file->fops->read == NULL) { return -1; }
@@ -95,6 +99,8 @@ int file_read(int fd, char *buffer, uint32_t size) {
 }
 
 int file_write(int fd, char *buffer, uint32_t size) {
+    if (fd < 0) { return 0; }
+
     file_t *file = get_process_local_file(fd);
 
     if (file->fops->write == NULL) { return -1; }
@@ -103,6 +109,8 @@ int file_write(int fd, char *buffer, uint32_t size) {
 }
 
 int file_dir_next(int fd, int index, char *fname_buffer) {
+    if (fd < 0) { return -1; }
+
     file_t *file = get_process_local_file(fd);
 
     if (file->fops->dir_next == NULL) { return -1; }
@@ -111,6 +119,8 @@ int file_dir_next(int fd, int index, char *fname_buffer) {
 }
 
 off_t file_lseek(int fd, off_t offset, int whence) {
+    if (fd < 0) { return -1; }
+
     file_t *file = get_process_local_file(fd);
 
     if (file->fops->lseek == NULL) { return -1; }
@@ -119,6 +129,8 @@ off_t file_lseek(int fd, off_t offset, int whence) {
 }
 
 off_t file_tell(int fd) {
+    if (fd < 0) { return -1; }
+
     file_t *file = get_process_local_file(fd);
 
     if (file->fops->tell == NULL) { return -1; }
