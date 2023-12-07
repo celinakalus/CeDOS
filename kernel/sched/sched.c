@@ -14,6 +14,7 @@
 #include "pic.h"
 #include "elf.h"
 #include "file.h"
+#include "alarm.h"
 
 #include "assembly.h"
 #include "assert.h"
@@ -90,7 +91,12 @@ PROCESS_ID sched_spawn(const char *name, char *args, int flags) {
     
     // TODO: implement with malloc
     strcpy(p->name_buf, name);
-    strcpy(p->args_buf, args);
+
+    if (args == 0) {
+        p->args_buf[0] = 0;
+    } else {
+        strcpy(p->args_buf, args);
+    }
 
     p->name = (const char*)&(p->name_buf);
     p->args = (const char*)&(p->args_buf);
@@ -118,6 +124,7 @@ PROCESS_ID sched_spawn(const char *name, char *args, int flags) {
 
     // start the process
     p->state = PSTATE_READY;
+    p->starvation = 0;
 
     crit_exit();
 
@@ -126,16 +133,15 @@ PROCESS_ID sched_spawn(const char *name, char *args, int flags) {
 
 
 void sched_interrupt_c(SCHED_FRAME * volatile frame, uint32_t volatile ebp) {
-    //kpanic("SCHEDULER STACK INFO");
     PROCESS* current = get_process(current_pid);
+
+    alarm_tick();
 
     if (current_pid != 0) {
         current->esp = (VIRT_ADDR)(frame);
         current->ebp = (VIRT_ADDR)(ebp);
         current->eip = (VIRT_ADDR)frame->eip;
         current->eflags = frame->eflags;
-
-        
 
         // save stack checksum
         stack_compute_checksum(&(current->checksum), current->esp, current->ebp);
@@ -150,13 +156,6 @@ void sched_interrupt_c(SCHED_FRAME * volatile frame, uint32_t volatile ebp) {
     PRINT_DBG("exiting %i, ", current_pid);
     current_pid = next_schedule(current_pid);
     PRINT_DBG("entering %i\n", current_pid);
-
-    // unblock all blocked processes
-    for (PROCESS *p = get_first_process(); p != NULL; p = p->next) {
-        if (p->state == PSTATE_BLOCKED) {
-            p->state = PSTATE_READY;
-        }
-    }
 
     // prepare to return to process
     PROCESS* next = get_process(current_pid);
@@ -208,19 +207,14 @@ int sched_init(void) {
 
     // create idle process
     PROCESS_ID idle = sched_spawn(NULL, NULL, 0);
-    assert(idle != -1);
+    assert(idle == 0);
 
     return 1;
 }
 
 void sched_yield(void) {
     crit_enter();
-    //PRINT_DBG("yield.\n");
     PROCESS *current = get_process(current_pid);
-    if (current != NULL && current->state != PSTATE_TERMINATED) {
-        current->state = PSTATE_READY;
-        //current->state = PSTATE_RUNNING;
-    }
 
     uint32_t csc = crit_stash();
     sti();
@@ -228,6 +222,29 @@ void sched_yield(void) {
     crit_restore(csc);
 
     crit_exit();
+}
+
+void sched_sleep(int ticks) {
+    // block the process. unblocking is done by the alarm.
+    PROCESS *process = get_process(current_pid);
+    process->state = PSTATE_BLOCKED;
+
+    // create a wakeup-alarm to unblock the process.
+    alarm_add(ticks, current_pid, ALARM_WAKEUP);
+
+    sched_yield();
+
+    // if this happens, it means the scheduler chose
+    // a blocked process as next process, which should
+    // never happen.
+    if (process->state == PSTATE_BLOCKED) {
+        kpanic("ERROR!");
+    }
+}
+
+void sched_unblock(int pid) {
+    PROCESS *process = get_process(pid);
+    process->state = PSTATE_READY;
 }
 
 int sched_kill(PROCESS_ID pid) {

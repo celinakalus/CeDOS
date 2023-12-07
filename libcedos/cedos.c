@@ -100,3 +100,8 @@ void process_kill(int pid) {
     volatile uint32_t res = 0;
     interrupt(0x30, res, 14, pid, 0, 0);
 }
+
+void sleep(int ticks) {
+    volatile uint32_t res = 0;
+    interrupt(0x30, res, 15, ticks, 0, 0);
+}

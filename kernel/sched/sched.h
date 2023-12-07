@@ -64,6 +64,20 @@ int sched_stop(void);
  */
 void sched_yield(void);
 
+/**
+ * @brief Blocks the current process for the given number of ticks.
+ * 
+ * @param ticks Number of ticks.
+ */
+void sched_sleep(int ticks);
+
+/**
+ * @brief Unblocks the process given by \p pid immediately.
+ * 
+ * @param pid ID of the process to be unblocked.
+ */
+void sched_unblock(int pid);
+
 /*!
  * Kills the process with the specified ID.
  * \param pid Process ID of the process to be killed.
