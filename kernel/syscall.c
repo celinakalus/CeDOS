@@ -25,7 +25,8 @@ void* SYSCALL_TABLE[] = {
         file_tell,
         time_get_ticks,
         mem_usage,
-        sched_kill
+        sched_kill,
+        sched_sleep
     };
 
 extern void syscall_interrupt(void);

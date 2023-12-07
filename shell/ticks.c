@@ -8,7 +8,7 @@
 #include "cedos.h"
 
 void main(char *args) {
-    if (strlen(args) == 0) {
+    if (args == NULL || strlen(args) == 0) {
         int ticks = sc_time_get_ticks();
         printf("%i\n", ticks);
     } else {
@@ -20,6 +20,7 @@ void main(char *args) {
         }
 
         int pid = get_pid();
+        int color = 40 + (pid % 8);
 
         int superticks = 0;
 
@@ -27,11 +28,11 @@ void main(char *args) {
             int ticks = sc_time_get_ticks();
 
             if (ticks / interval != superticks) {
-                printf("[%i] %i ticks\n", pid, ticks);
+                printf("\e[%im\e[0K[%i] %i ticks\e[0m\n", color, pid, ticks);
                 superticks = ticks / interval;
             }
 
-            yield();
+            sleep(interval);
         }
     }
 }
