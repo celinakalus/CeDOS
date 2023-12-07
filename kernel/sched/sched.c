@@ -118,6 +118,7 @@ PROCESS_ID sched_spawn(const char *name, char *args, int flags) {
 
     // start the process
     p->state = PSTATE_READY;
+    p->starvation = 0;
 
     crit_exit();
 
@@ -126,7 +127,6 @@ PROCESS_ID sched_spawn(const char *name, char *args, int flags) {
 
 
 void sched_interrupt_c(SCHED_FRAME * volatile frame, uint32_t volatile ebp) {
-    //kpanic("SCHEDULER STACK INFO");
     PROCESS* current = get_process(current_pid);
 
     if (current_pid != 0) {
@@ -134,8 +134,6 @@ void sched_interrupt_c(SCHED_FRAME * volatile frame, uint32_t volatile ebp) {
         current->ebp = (VIRT_ADDR)(ebp);
         current->eip = (VIRT_ADDR)frame->eip;
         current->eflags = frame->eflags;
-
-        
 
         // save stack checksum
         stack_compute_checksum(&(current->checksum), current->esp, current->ebp);
@@ -150,13 +148,6 @@ void sched_interrupt_c(SCHED_FRAME * volatile frame, uint32_t volatile ebp) {
     PRINT_DBG("exiting %i, ", current_pid);
     current_pid = next_schedule(current_pid);
     PRINT_DBG("entering %i\n", current_pid);
-
-    // unblock all blocked processes
-    for (PROCESS *p = get_first_process(); p != NULL; p = p->next) {
-        if (p->state == PSTATE_BLOCKED) {
-            p->state = PSTATE_READY;
-        }
-    }
 
     // prepare to return to process
     PROCESS* next = get_process(current_pid);
@@ -208,19 +199,14 @@ int sched_init(void) {
 
     // create idle process
     PROCESS_ID idle = sched_spawn(NULL, NULL, 0);
-    assert(idle != -1);
+    assert(idle == 0);
 
     return 1;
 }
 
 void sched_yield(void) {
     crit_enter();
-    //PRINT_DBG("yield.\n");
     PROCESS *current = get_process(current_pid);
-    if (current != NULL && current->state != PSTATE_TERMINATED) {
-        current->state = PSTATE_READY;
-        //current->state = PSTATE_RUNNING;
-    }
 
     uint32_t csc = crit_stash();
     sti();

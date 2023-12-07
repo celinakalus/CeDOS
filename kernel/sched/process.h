@@ -86,6 +86,9 @@ typedef struct __PROCESS {
     //! Process priority.
     PROCESS_PRIO priority;
 
+    //! Process starvation counter
+    int starvation;
+
     //! Stack checksum
     STACK_CHECKSUM checksum;
 
