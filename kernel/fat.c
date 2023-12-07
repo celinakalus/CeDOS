@@ -280,7 +280,7 @@ uint32_t FAT_read(file_t *file, uint8_t *buffer, uint32_t count) {
 
 off_t FAT_lseek(file_t *file, off_t offset, int whence) {
     if (whence == SEEK_SET) {
-        file->pos = offset;
+        file->pos = (offset >= file->size) ? file->size - 1 : offset;
     } else if (whence == SEEK_CUR) {
         file->pos += offset;
     } else if (whence == SEEK_END) {
