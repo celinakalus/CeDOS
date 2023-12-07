@@ -1,7 +1,8 @@
 #include <stdint.h>
+#include <stddef.h>
 
 #include "string.h"
-#include "fat.h"
+#include "fat12.h"
 
 void printc(char c) {
     static uint8_t *display = (uint8_t*)(0xB8000);
@@ -21,6 +22,23 @@ void assert_failed(const char * message) {
     while (1) {}
 }
 
+FAT12_descriptor_t fat_desc;
+
+void *FAT12_read(uint32_t lba, uint32_t *offset, size_t size, void *buffer) {
+    void *FAT_addr = (void*)(0x10000);
+
+    if (offset != NULL) {
+        lba += (*offset) / fat_desc.bytes_per_sect;
+        *offset = (*offset) % fat_desc.bytes_per_sect;
+
+        void *ptr = (void*)((long)(FAT_addr) + (long)(lba * fat_desc.bytes_per_sect));
+        return memcpy(buffer, ptr + *offset, size);
+    } else {
+        void *ptr = (void*)((long)(FAT_addr) + (long)(lba * fat_desc.bytes_per_sect));
+        return memcpy(buffer, ptr, size);
+    }
+}
+
 int load_kernel() {
     // debug output
     uint8_t *dbuf = (uint8_t *)(0x10000);
@@ -37,8 +55,7 @@ int load_kernel() {
     }
 
     //while (1);
-
-    FAT_init();
+    FAT12_init(&fat_desc);
 
     int i = 0;
 
@@ -49,7 +66,7 @@ int load_kernel() {
         char buffer[832];
         uint32_t file_size;
 
-        i = FAT_root_dir_next(i, buffer, &first_cluster, &file_size);
+        i = FAT12_root_dir_next(&fat_desc, i, buffer, &first_cluster, &file_size);
 
         print_string(buffer);
         print_string("  ");
@@ -62,8 +79,8 @@ int load_kernel() {
     uint16_t cluster = first_cluster;
     uint8_t *buffer = (uint8_t *)(0x100000);
     while (1) {
-        buffer = FAT_read_cluster(cluster, buffer);
-        cluster = FAT_next_cluster(cluster);
+        buffer = FAT12_read_cluster(&fat_desc, cluster, buffer);
+        cluster = FAT12_next_cluster(&fat_desc, cluster);
         
         if (cluster == 0xFFF || cluster == 0x000) { break; }
     }
