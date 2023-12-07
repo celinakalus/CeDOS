@@ -1,0 +1,38 @@
+OUTPUT_ARCH(i386)
+OUTPUT_FORMAT(binary)
+
+PAGE_SIZE = 1 << 12;
+
+MEMORY
+{
+  REALMD_VMA :        ORIGIN = 0x00009000, LENGTH = 0x30000000
+  KERNEL_VMA :        ORIGIN = 0xC0000000, LENGTH = 0x30000000
+}
+
+SECTIONS
+{
+  KERNEL : AT(0x0000)
+  {
+    */entry.s.o(.text)
+    */*(.text)
+    */*(.data)
+    */*(.rodata*)
+    */*(.bss)
+  } >KERNEL_VMA
+
+  REALMD : AT(LOADADDR(KERNEL) + SIZEOF(KERNEL))
+  {
+    */*(.text.realmode)
+    
+  } >REALMD_VMA
+}
+
+__KERNEL_LMA = LOADADDR(KERNEL);
+__KERNEL_VMA = ADDR(KERNEL);
+__KERNEL_SIZE = SIZEOF(KERNEL);
+
+__REALMD_LMA = LOADADDR(REALMD);
+__REALMD_VMA = ADDR(REALMD);
+__REALMD_SIZE = SIZEOF(REALMD);
+
+__KERNEL_STACK_ADDR = 0xC0400000;
