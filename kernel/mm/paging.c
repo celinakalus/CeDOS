@@ -204,12 +204,15 @@ PHYS_ADDR create_empty_page_dir(void) {
 EXCEPTION(page_fault_isr, frame, error_code) {
     volatile VIRT_ADDR faulty_addr;
     __asm__ volatile ("mov %%cr2, %0" : "=a" (faulty_addr));
-    
+    uint32_t pdir_index = PAGE_DIR_INDEX(faulty_addr);
+    uint32_t ptbl_index = PAGE_TABLE_INDEX(faulty_addr);
+
     if (error_code & PAGE_FAULT_FLAGS_PRESENT) {
         kpanic("Page-protection violation!");
     } else {
         PHYS_ADDR new_page = get_free_page();
-        force_map_page_to_this(new_page, PAGE_DIR_INDEX(faulty_addr), PAGE_TABLE_INDEX(faulty_addr), PAGE_TABLE_FLAGS);
+        force_map_page_to_this(new_page, pdir_index, ptbl_index, PAGE_TABLE_FLAGS);
+        memset(PAGE_MAPPED_ADDR(pdir_index, ptbl_index), 0, PAGE_SIZE);
     }
 }
 

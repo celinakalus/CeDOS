@@ -32,6 +32,7 @@
 
 PROCESS* get_slot(void) {
     PROCESS *new_process = (PROCESS*)malloc(sizeof(PROCESS));
+    memset(new_process, 0, sizeof(PROCESS));
     return new_process;
 }
 
@@ -206,8 +207,13 @@ int sched_init(void) {
     current_pid = 0;
 
     // create idle process
-    PROCESS_ID idle = sched_spawn(NULL, NULL, 0);
-    assert(idle == 0);
+    PROCESS_ID idle_pid = sched_spawn(NULL, NULL, 0);
+    assert(idle_pid == 0);
+
+    PROCESS *idle = get_process(idle_pid);
+    assert(idle != NULL);
+
+    idle->state = PSTATE_READY;
 
     return 1;
 }
@@ -217,8 +223,8 @@ void sched_yield(void) {
     PROCESS *current = get_process(current_pid);
 
     uint32_t csc = crit_stash();
-    sti();
     INT(0x20);
+    sti();
     crit_restore(csc);
 
     crit_exit();
@@ -258,14 +264,13 @@ int sched_kill(PROCESS_ID pid) {
             sched_kill(child->id);
         }
 
-        remove_process(process->id);
+        process->state = PSTATE_TERMINATED;
     } else {
         success = 0;
     }
 
-    if (get_process(current_pid) == NULL) {
+    if (pid == current_pid) {
         // current process has terminated
-        crit_reset();
         sched_yield();
     }
 
