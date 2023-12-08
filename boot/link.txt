@@ -7,27 +7,32 @@ PART_TABLE_START = 0x00007DBE;
 
 MEMORY
 {
-  BOOT_VMA    :   ORIGIN = 0x00007C00, LENGTH = 0x00001000
+  STAGE1_VMA  :   ORIGIN = 0x00007C00, LENGTH = 0x00001000
+  STAGE2_VMA  :   ORIGIN = 0x00001000, LENGTH = 0x00001000
   BOOT_DATA   :   ORIGIN = 0x00009000, LENGTH = 0x00001000
   KERNEL_VMA  :   ORIGIN = 0xC0000000, LENGTH = 0x30000000
 }
 
 SECTIONS
 {
-  BOOT : AT(0x0000)
+  STAGE1 : AT(0x0000)
   {
     */*.o(.mbr)
     . = 510;
     BYTE(0x55)
     BYTE(0xAA)
-    */*.o(.text)
-  } >BOOT_VMA
+  } >STAGE1_VMA
 
-  .data : 
+  STAGE2 : AT(LOADADDR(STAGE1) + SIZEOF(STAGE1))
   {
+    */*.o(.text)
     */*.o(.rodata*)
     */*.o(.data)
-  } >BOOT_VMA
+  } >STAGE2_VMA
+
+  .data : AT(LOADADDR(STAGE2) + SIZEOF(STAGE2))
+  {
+  } >STAGE2_VMA
 
   .bss : 
   {

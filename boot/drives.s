@@ -201,7 +201,7 @@ load_end:
   movw $0x0000, %si   # buffer address
   movw $0x1000, %ax
   movw %ax, %es
-  call print
+  ;call print
 
   movw $done_msg, %si
   call print

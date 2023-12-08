@@ -16,7 +16,7 @@ start:
   movw %ax, %fs
 
   # setup stack
-  movw $0x9000, %sp
+  movw $0x7c00, %sp
   movw %sp, %bp
 
   # save boot drive index
@@ -33,7 +33,7 @@ start:
 
   # load rest of bootloader
   movw $0x0000, %bx   # buffer address
-  movw $0x07e0, %ax
+  movw $0x0100, %ax
   movw %ax, %es       # buffer address (segment)
   movb $0x02, %ah     # function 0x02: read a sector
   movb $0x07, %al     # sectors to read count
@@ -44,7 +44,9 @@ start:
   movb (%si), %dl
 
   int $0x13
-  jnc bl_loaded
+  jc error
+
+  ljmp $0, $bl_loaded
 
   # auxiliary functions
 .global error
@@ -128,6 +130,7 @@ load_bl_msg:
   .byte 0
 
 .section .text
+.code16
 bl_loaded:
   mov $done_msg, %si
   call print

@@ -4,9 +4,9 @@
 
 
 void *create_kernel_environment() {
-    PAGE_DIR_ENTRY (*pdir)[PAGE_ENTRY_COUNT] = (void*)(1 * PAGE_SIZE);
-    PAGE_TABLE_ENTRY (*kernel)[PAGE_ENTRY_COUNT] = (void*)(2 * PAGE_SIZE);
-    PAGE_TABLE_ENTRY (*lowmem)[PAGE_ENTRY_COUNT] = (void*)(3 * PAGE_SIZE);
+    PAGE_DIR_ENTRY (*pdir)[PAGE_ENTRY_COUNT] = (void*)(2 * PAGE_SIZE);
+    PAGE_TABLE_ENTRY (*kernel)[PAGE_ENTRY_COUNT] = (void*)(3 * PAGE_SIZE);
+    PAGE_TABLE_ENTRY (*lowmem)[PAGE_ENTRY_COUNT] = (void*)(4 * PAGE_SIZE);
 
     // set everything to zero
     memset(pdir, 0, 3 * PAGE_SIZE);
