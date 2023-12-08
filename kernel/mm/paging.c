@@ -71,6 +71,8 @@ int force_map_page_to(PHYS_ADDR page_addr, uint32_t dir_index, uint32_t table_in
         // acquire new page table
         PHYS_ADDR new_page_table = get_free_page();
         page_dir[dir_index] = MAKE_PAGE_ENTRY(new_page_table, PAGE_TABLE_FLAGS);
+        inv_all_pages();
+        memset(page_table, 0, PAGE_SIZE);
     }
 
     // map page
@@ -95,6 +97,8 @@ int force_map_page_to_this(PHYS_ADDR page_addr, uint32_t dir_index, uint32_t tab
         // acquire new page table
         void *new_page_table = get_free_page();
         page_dir[dir_index] = MAKE_PAGE_ENTRY(new_page_table, PAGE_TABLE_FLAGS);
+        inv_all_pages();
+        memset(page_table, 0, PAGE_SIZE);
     }
 
     // map page
@@ -126,9 +130,8 @@ size_t copy_to_pdir(VIRT_ADDR src, size_t length, PHYS_ADDR pdir, VIRT_ADDR dest
 
         PRINT_DBG("src=%p dest=%p length=%i offset=%i plen=%i\n", src, dest, length, offset, part_length);
 
-        for (uint32_t i = 0; i < part_length; i++) {
-            ((uint8_t*)mount_dest)[offset + i] = ((uint8_t*)src)[i];
-        }
+        memset(mount_dest, 0, PAGE_SIZE);
+        memcpy((uint8_t*)(mount_dest) + offset, src, part_length);
 
         dest += part_length;
         src += part_length;
