@@ -82,7 +82,7 @@ void main(char *args) {
 
         char *file = buffer;
         char *args = strchr(file, ' ');
-        char *amp = strchr(file, '.');
+        char *amp = strchr(file, ',');
         
         if (args != NULL) {
             args[0] = 0;

@@ -250,7 +250,11 @@ void sched_sleep(int ticks) {
 
 void sched_unblock(int pid) {
     PROCESS *process = get_process(pid);
-    process->state = PSTATE_READY;
+    
+    // only unblock previously blocked processes
+    if (process->state == PSTATE_BLOCKED) {
+        process->state = PSTATE_READY;
+    }
 }
 
 int sched_kill(PROCESS_ID pid) {

@@ -83,8 +83,8 @@ void *FAT12_read_cluster(FAT12_descriptor_t *fat, uint16_t cluster, void *buffer
 }
 
 int FAT12_root_dir_next(FAT12_descriptor_t *fat, int index, char *fname_buffer, uint16_t *first_cluster, uint32_t *file_size) {
-    memset(fname_buffer, 0, sizeof(fname_buffer));
-
+    fname_buffer[0] = 0;
+    
     while (1) {
         //printk("%i\n", index);
         // index overflow
@@ -126,6 +126,10 @@ int FAT12_root_dir_next(FAT12_descriptor_t *fat, int index, char *fname_buffer, 
                 fname_buffer[offset++] = lfn_entry->part_3[i];
             }
 
+            if (lfn_entry->seq_num & (1 << 6)) {
+                fname_buffer[offset] = 0;
+            }
+
             index++;
             continue;
         }
@@ -148,13 +152,9 @@ int FAT12_root_dir_next(FAT12_descriptor_t *fat, int index, char *fname_buffer, 
 
         // if no VFAT LFN exists, use DOS name
         if (fname_buffer[0] == 0) {
-            for (int i = 0; i < 8; i++) {
-                fname_buffer[i] = dir_entry.name[i];
-            }
+            memcpy(fname_buffer, dir_entry.name, 8);
             fname_buffer[8] = '.';
-            for (int i = 0; i < 3; i++) {
-                fname_buffer[i + 9] = dir_entry.ext[i];
-            }
+            memcpy(fname_buffer + 9, dir_entry.ext, 3);
             fname_buffer[12] = 0;
         }
 
