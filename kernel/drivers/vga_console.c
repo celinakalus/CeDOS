@@ -21,6 +21,10 @@
 
 uint32_t line = 0;
 uint32_t column = 0;
+
+uint32_t saved_line = 0;
+uint32_t saved_column = 0;
+
 uint8_t color = 0x0F;
 
 int vga_con_init(void);
@@ -166,6 +170,17 @@ void vga_con_write_c(const char c) {
         } else if (n < 106) {
             color = n - 90 + 8;
         }
+        state = NORMAL;
+    } else if (state == ESCAPE_N && c == 's') {
+        saved_line = line;
+        saved_column = column;
+        state = NORMAL;
+    } else if (state == ESCAPE_N && c == 'u') {
+        line = saved_line;
+        column = saved_column;
+
+        saved_line = 0;
+        saved_column = 0;
         state = NORMAL;
     } else if (state != NORMAL) {
         state = NORMAL;
