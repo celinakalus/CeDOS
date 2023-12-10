@@ -5,6 +5,16 @@
 
 #include <stdint.h>
 
+typedef struct {
+    int year;
+    int month;
+    int day;
+    
+    int hour;
+    int minute;
+    int second;
+} datetime_t;
+
 int sysprint(const char *fmt, int arg1, int arg2);
 int yield();
 void sleep(int ticks);
@@ -28,6 +38,8 @@ int dir_next(int fd, int index, char *fname_buffer);
 
 int sc_time_get_ticks(void);
 uint32_t sc_mem_usage(void);
+
+int time_now(datetime_t *buffer);
 
 
 #endif

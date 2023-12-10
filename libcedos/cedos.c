@@ -105,3 +105,8 @@ void sleep(int ticks) {
     volatile uint32_t res = 0;
     interrupt(0x30, res, 15, ticks, 0, 0);
 }
+
+int time_now(datetime_t *buffer) {
+    volatile uint32_t res = 0;
+    interrupt(0x30, res, 16, buffer, 0, 0);
+}
