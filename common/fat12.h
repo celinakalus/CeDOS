@@ -32,6 +32,12 @@ typedef struct {
  */
 extern void *FAT12_read(uint32_t lba, uint32_t *offset, size_t size, void *buffer);
 
+/**
+ * @brief Writes a portion of data to the raw FAT12 image.
+ * This function has to be defined by whichever code is including this driver.
+ */
+extern void *FAT12_write(uint32_t lba, uint32_t *offset, size_t size, void *buffer);
+
 
 /**
  * @brief Initialize FAT12 descriptor structure
@@ -55,6 +61,7 @@ void FAT12_init(FAT12_descriptor_t *fat);
  * @param buffer Pointer to a cluster-sized buffer.
 */
 void *FAT12_read_cluster(FAT12_descriptor_t *fat, uint16_t cluster, void *buffer);
+void *FAT12_write_cluster(FAT12_descriptor_t *fat, uint16_t cluster, void *buffer);
 
 /**
  * @brief Iterate through entries in the root directory and return the next file name, the first cluster index, and file size.

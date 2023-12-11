@@ -30,10 +30,20 @@ typedef struct {
     uint32_t eflags;
 }__attribute__((packed)) SCHED_FRAME;
 
+/**
+ * Process start parameters
+*/
+typedef struct {
+    int flags;
+
+    int file_in;
+    int file_out;
+} psparams_t;
+
 /*!
  * Spawns a new process, loads it from the given ELF file, and returns its process ID.
  */
-PROCESS_ID sched_spawn(const char *name, char *args, int flags);
+PROCESS_ID sched_spawn(const char *name, char *args, psparams_t *params);
 
 /*!
  * Return the ID of the current process.

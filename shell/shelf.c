@@ -83,6 +83,9 @@ void main(char *args) {
         char *file = buffer;
         char *args = strchr(file, ' ');
         char *amp = strchr(file, ',');
+
+        char *out = strchr(file, '>');
+        char *in = strchr(file, '<');
         
         if (args != NULL) {
             args[0] = 0;
@@ -106,9 +109,23 @@ void main(char *args) {
             continue;
         }
 
-        int pid = process_spawn(file, args);
+        psparams_t params = {
+                .flags = 0,
+                .file_in = stdin,
+                .file_out = stdout
+            };
+        
+        if (out) {
+            *(out - 1) = 0;
+            params.file_out = fopen(out + 1, "w");
+        }
 
-        //printf("Child process %i spawned, waiting for termination...\n", pid);
+        if (in) {
+            *(in - 1) = 0;
+            params.file_in = fopen(in + 1, "r");
+        }
+
+        int pid = process_spawn_params(file, args, &params);
 
         if (pid == -1) {
             printf("File not found: %s\n", buffer);
@@ -119,7 +136,5 @@ void main(char *args) {
         } else {
             process_wait(pid);
         }
-
-        //printf("Child process %i terminated.\n", pid);
     }
 }

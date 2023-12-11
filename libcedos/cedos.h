@@ -15,12 +15,22 @@ typedef struct {
     int second;
 } datetime_t;
 
+/**
+ * Process start parameters
+*/
+typedef struct {
+    int flags;
+
+    int file_in;
+    int file_out;
+} psparams_t;
+
 int sysprint(const char *fmt, int arg1, int arg2);
 int yield();
 void sleep(int ticks);
 int get_pid();
 int process_spawn(const char *fname, const char *args);
-int process_spawn_pipe(const char *fname, const char *args, int stdin, int stdout);
+int process_spawn_params(const char *fname, const char *args, psparams_t *params);
 void process_wait(int pid);
 void process_kill(int pid);
 

@@ -54,7 +54,7 @@ void entry_idle(char *args) {
 /*!
  * Spawn a new process and returns its process ID.
  */
-PROCESS_ID sched_spawn(const char *name, char *args, int flags) {
+PROCESS_ID sched_spawn(const char *name, char *args, psparams_t *params) {
     crit_enter();
 
     PRINT_DBG("process name: %s\n", name);
@@ -82,9 +82,9 @@ PROCESS_ID sched_spawn(const char *name, char *args, int flags) {
         p->eip = sched_dispatcher;
     }
 
-    if (flags != 0) {
-        p->stdin = (int)(flags & 0xFF);
-        p->stdout = (int)(flags >> 8);
+    if (params) {
+        p->stdin = params->file_in;
+        p->stdout = params->file_out;
     } else {
         p->stdin = 0;
         p->stdout = 1;

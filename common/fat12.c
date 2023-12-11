@@ -82,6 +82,12 @@ void *FAT12_read_cluster(FAT12_descriptor_t *fat, uint16_t cluster, void *buffer
     return buffer += fat->cluster_size;
 }
 
+void *FAT12_write_cluster(FAT12_descriptor_t *fat, uint16_t cluster, void *buffer) {
+    FAT12_write(fat->data_lba + ((cluster - 2) * fat->sect_per_cluster), NULL, fat->cluster_size, buffer);
+
+    return buffer += fat->cluster_size;
+}
+
 int FAT12_root_dir_next(FAT12_descriptor_t *fat, int index, char *fname_buffer, uint16_t *first_cluster, uint32_t *file_size) {
     fname_buffer[0] = 0;
     

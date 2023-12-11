@@ -39,6 +39,21 @@ void *FAT12_read(uint32_t lba, uint32_t *offset, size_t size, void *buffer) {
     }
 }
 
+void *FAT12_write(uint32_t lba, uint32_t *offset, size_t size, void *buffer) {
+    void *FAT_addr = (void*)(0x10000);
+
+    if (offset != NULL) {
+        lba += (*offset) / fat_desc.bytes_per_sect;
+        *offset = (*offset) % fat_desc.bytes_per_sect;
+
+        void *ptr = (void*)((long)(FAT_addr) + (long)(lba * fat_desc.bytes_per_sect));
+        return memcpy(ptr + *offset, buffer, size);
+    } else {
+        void *ptr = (void*)((long)(FAT_addr) + (long)(lba * fat_desc.bytes_per_sect));
+        return memcpy(ptr, buffer, size);
+    }
+}
+
 int load_kernel() {
     // debug output
     uint8_t *dbuf = (uint8_t *)(0x10000);

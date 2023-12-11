@@ -50,9 +50,9 @@ int process_spawn(const char *fname, const char *args) {
     return res;
 }
 
-int process_spawn_pipe(const char *fname, const char *args, int stdin, int stdout) {
+int process_spawn_params(const char *fname, const char *args, psparams_t *params) {
     volatile uint32_t res = 0;
-    interrupt(0x30, res, 4, fname, args, stdin | (stdout << 8));
+    interrupt(0x30, res, 4, fname, args, params);
     return res;
 }
 
