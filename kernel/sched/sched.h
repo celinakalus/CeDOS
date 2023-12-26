@@ -65,11 +65,11 @@ int sched_stop(void);
 void sched_yield(void);
 
 /**
- * @brief Blocks the current process for the given number of ticks.
+ * @brief Blocks the current process for the given number of milliseconds.
  * 
- * @param ticks Number of ticks.
+ * @param msec Number of milliseconds.
  */
-void sched_sleep(int ticks);
+void sched_sleep(int msec);
 
 /**
  * @brief Unblocks the process given by \p pid immediately.

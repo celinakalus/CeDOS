@@ -17,7 +17,7 @@ typedef struct {
 
 int sysprint(const char *fmt, int arg1, int arg2);
 int yield();
-void sleep(int ticks);
+void sleep(int msec);
 int get_pid();
 int process_spawn(const char *fname, const char *args);
 int process_spawn_pipe(const char *fname, const char *args, int stdin, int stdout);

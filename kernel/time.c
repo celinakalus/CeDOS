@@ -3,6 +3,7 @@
 #include "interrupts.h"
 #include "pic.h"
 #include "core.h"
+#include "alarm.h"
 
 #define RTC_COMMAND  			0x70
 #define RTC_DATA 				0x71
@@ -74,6 +75,7 @@ int time_now(datetime_t *buffer) {
 
 INTERRUPT(rtc_interrupt, frame) {
     time_tick();
+    alarm_tick();
 
     rtc_get(RTC_REGISTER_C);
 

@@ -101,9 +101,9 @@ void process_kill(int pid) {
     interrupt(0x30, res, 14, pid, 0, 0);
 }
 
-void sleep(int ticks) {
+void sleep(int msec) {
     volatile uint32_t res = 0;
-    interrupt(0x30, res, 15, ticks, 0, 0);
+    interrupt(0x30, res, 15, msec, 0, 0);
 }
 
 int time_now(datetime_t *buffer) {
