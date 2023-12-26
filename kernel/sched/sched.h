@@ -46,6 +46,11 @@ PROCESS_ID get_current_process(void);
  */
 int sched_init(void);
 
+/**
+ * Idle process main function (PID 0).
+*/
+void sched_idle(char *args);
+
 /*!
  * Starts the scheduler.
  * \return 1 on success, 0 on failure.

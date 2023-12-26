@@ -37,6 +37,13 @@ __attribute__((always_inline)) inline PHYS_ADDR switch_page_dir(PHYS_ADDR pd_new
     return (void*)pd_old;
 }
 
+__attribute__((always_inline)) inline PHYS_ADDR get_current_page_dir(void) {
+    uint32_t pd_old;
+    __asm__ volatile (  "mov %%cr3, %0" : 
+                        "=a" (pd_old) : );
+    return (void*)pd_old;
+}
+
 /*!
  * Invalidates all pages, forces buffer reload.
  */

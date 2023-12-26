@@ -45,7 +45,7 @@ PROCESS_ID get_current_process(void) {
 int sched_dispatcher(void);
 
 
-void entry_idle(char *args) {
+void sched_idle(char *args) {
     while (1) { 
         hlt();
     }
@@ -61,10 +61,8 @@ PROCESS_ID sched_spawn(const char *name, char *args, int flags) {
     PRINT_DBG("process args: %s\n", args);
     PRINT_DBG("process flags: %i\n", flags);
 
-    if (name != NULL) {
-        int fd = file_open(name, 0);
-        if (fd == -1) { return -1; }
-    }
+    int fd = file_open(name, 0);
+    if (fd == -1) { return -1; }
 
     PHYS_ADDR page_dir = create_empty_page_dir();
 
@@ -75,12 +73,7 @@ PROCESS_ID sched_spawn(const char *name, char *args, int flags) {
     p->esp = USER_STACK - sizeof(SCHED_FRAME);
     p->eflags = PROCESS_STD_EFLAGS;
     p->entry = (PROCESS_MAIN*)(0xDEADBEEF);
-    
-    if (name == NULL) {
-        p->eip = entry_idle;
-    } else {
-        p->eip = sched_dispatcher;
-    }
+    p->eip = sched_dispatcher;
 
     if (flags != 0) {
         p->stdin = (int)(flags & 0xFF);
@@ -138,15 +131,13 @@ void sched_interrupt_c(SCHED_FRAME * volatile frame, uint32_t volatile ebp) {
 
     alarm_tick();
 
-    if (current_pid != 0) {
-        current->esp = (VIRT_ADDR)(frame);
-        current->ebp = (VIRT_ADDR)(ebp);
-        current->eip = (VIRT_ADDR)frame->eip;
-        current->eflags = frame->eflags;
+    current->esp = (VIRT_ADDR)(frame);
+    current->ebp = (VIRT_ADDR)(ebp);
+    current->eip = (VIRT_ADDR)frame->eip;
+    current->eflags = frame->eflags;
 
-        // save stack checksum
-        stack_compute_checksum(&(current->checksum), current->esp, current->ebp);
-    }
+    // save stack checksum
+    stack_compute_checksum(&(current->checksum), current->esp, current->ebp);
 
     PRINT_DBG("esp: %p\n", current->esp);
     PRINT_DBG("ebp: %p\n", current->ebp);
@@ -181,13 +172,11 @@ void sched_interrupt_c(SCHED_FRAME * volatile frame, uint32_t volatile ebp) {
     frame = (volatile SCHED_FRAME*)(next->esp);
     ebp = next->ebp;
 
-    if (current_pid == 0) {
-        frame->cs = 0x18;
-        frame->eip = next->eip;
-        frame->eflags = (uint32_t)(next->eflags);
-        frame->esp = (uint32_t)(next->esp);
-        frame->ebp = (uint32_t)(next->ebp);
-    }
+    frame->cs = 0x18;
+    frame->eip = next->eip;
+    frame->eflags = (uint32_t)(next->eflags);
+    frame->esp = (uint32_t)(next->esp);
+    frame->ebp = (uint32_t)(next->ebp);
 
     PRINT_DBG("esp: %p, ebp: %p, eip: %p, eflags: %p\n", frame->esp, frame->ebp, frame->eip, frame->eflags);
 
@@ -207,11 +196,14 @@ int sched_init(void) {
     current_pid = 0;
 
     // create idle process
-    PROCESS_ID idle_pid = sched_spawn(NULL, NULL, 0);
+    PROCESS *idle = get_slot();
+    assert(idle != NULL);
+
+    PROCESS_ID idle_pid = add_process(idle, NULL);
     assert(idle_pid == 0);
 
-    PROCESS *idle = get_process(idle_pid);
-    assert(idle != NULL);
+    idle->page_dir = get_current_page_dir();
+    idle->state = PSTATE_RUNNING;
 
     idle->state = PSTATE_READY;
 

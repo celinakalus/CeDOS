@@ -128,22 +128,31 @@ void tasktree(PROCESS_ID pid) {
 
 int os_main(void) {
     infodump();
-
-    // create test tasks
-    printk("Creating tasks.\n");
-    
-    
-    int pid = sched_spawn("shelf", "Hello World!", 0);
-    assert(pid != -1);
-    //sched_spawn("fibonacci.o", "Hello World!");
-    //sched_spawn("fibonacci.o", "Hello World!");
  
     printk("Starting scheduler.\n");
     sched_start();
 
-    //kpanic("SIMULATED KERNEL PANIC");
+    printk("Creating tasks.\n");
+    
+    /**
+     * Here, the kernel "forks" into the idle process and
+     * the shell.
+     * 
+     * The idle process is executed whenever, duh, all
+     * processes are out of work and idling.
+     * 
+     * The shell is where the user can give commands and
+     * start her own processes. It is an executable that
+     * is read from disk.
+    */
+    int pid = sched_spawn("shelf", "Hello World!", 0);
+    assert(pid != -1);
 
-    // won't be executed
-    printk("Main procedure terminating.\n");
+    // here is where the idle process (PID 0) starts.
+    sched_idle(NULL);
+
+    // this should never happen.
+    kpanic("Returned from idle process!");
+
     return 0;
 }
