@@ -16,6 +16,9 @@
 
 #define PIC_END_OF_INTERRUPT	0x20
 
+// IRQ number of the slave interrupt cascade
+#define PIC_IRQ_CASCADE         2
+
 #define PIC1_IRQ(n) (PIC1_OFFSET + n)
 #define PIC2_IRQ(n) (PIC2_OFFSET + n)
 

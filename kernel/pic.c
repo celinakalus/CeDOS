@@ -26,9 +26,12 @@ int pic_init(void) {
     outb(0x01, PIC2_DATA);
     nop(); nop(); nop(); nop();
 
-    // mask all interrupts
-    outb(0xff, PIC1_DATA);
+    // mask all interrupts (except for cascade)
+    outb(~(1 << PIC_IRQ_CASCADE), PIC1_DATA);
     outb(0xff, PIC2_DATA);
+
+    // EOI
+    pic2_eoi();
 
     return 1;
 }
