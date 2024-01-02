@@ -11,7 +11,7 @@
 #include "mm/paging.h"
 
 // 11928 ~ 10ms per interval
-#define SCHED_INTERVAL (1193)
+#define SCHED_INTERVAL (11928)
 
 /*!
  * Structure of the process stack when the scheduler is executed.

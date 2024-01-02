@@ -1,6 +1,10 @@
 #ifndef __TIME_H
 #define __TIME_H
 
+// frequency =  32768 >> (rate-1);
+// rate at least 2 (~8kHz)
+#define RTC_INT_RATE 2
+
 typedef struct {
     int year;
     int month;
@@ -10,6 +14,8 @@ typedef struct {
     int minute;
     int second;
 } datetime_t;
+
+int time_init(void);
 
 void time_tick(void);
 

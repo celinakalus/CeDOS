@@ -16,7 +16,6 @@ sched_interrupt:
   push %ebx
   push %eax
   xor %eax, %eax
-  call time_tick
   call sched_interrupt_c
   pop %eax
   pop %ebx
