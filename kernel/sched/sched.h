@@ -11,7 +11,7 @@
 #include "mm/paging.h"
 
 // 11928 ~ 10ms per interval
-#define SCHED_INTERVAL (1193)
+#define SCHED_INTERVAL (11928)
 
 /*!
  * Structure of the process stack when the scheduler is executed.
@@ -70,11 +70,11 @@ int sched_stop(void);
 void sched_yield(void);
 
 /**
- * @brief Blocks the current process for the given number of ticks.
+ * @brief Blocks the current process for the given number of milliseconds.
  * 
- * @param ticks Number of ticks.
+ * @param msec Number of milliseconds.
  */
-void sched_sleep(int ticks);
+void sched_sleep(int msec);
 
 /**
  * @brief Unblocks the process given by \p pid immediately.

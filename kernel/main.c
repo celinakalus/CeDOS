@@ -2,6 +2,7 @@
 #include "drivers/keyboard.h"
 #include "drivers/graphics.h"
 
+#include "time.h"
 
 #include "sched/sched.h"
 #include "sched/process.h"
@@ -61,6 +62,10 @@ int os_init(void) {
 
     printk("Installing syscalls...");
     syscall_init();
+    printk("done.\n");
+
+    printk("Initializing RTC...");
+    time_init();
     printk("done.\n");
 
     printk("Initializing scheduler...");

@@ -15,6 +15,7 @@
 #include "elf.h"
 #include "file.h"
 #include "alarm.h"
+#include "time.h"
 
 #include "assembly.h"
 #include "assert.h"
@@ -129,8 +130,6 @@ PROCESS_ID sched_spawn(const char *name, char *args, int flags) {
 void sched_interrupt_c(SCHED_FRAME * volatile frame, uint32_t volatile ebp) {
     PROCESS* current = get_process(current_pid);
 
-    alarm_tick();
-
     current->esp = (VIRT_ADDR)(frame);
     current->ebp = (VIRT_ADDR)(ebp);
     current->eip = (VIRT_ADDR)frame->eip;
@@ -222,13 +221,13 @@ void sched_yield(void) {
     crit_exit();
 }
 
-void sched_sleep(int ticks) {
+void sched_sleep(int msec) {
     // block the process. unblocking is done by the alarm.
     PROCESS *process = get_process(current_pid);
     process->state = PSTATE_BLOCKED;
 
     // create a wakeup-alarm to unblock the process.
-    alarm_add(ticks, current_pid, ALARM_WAKEUP);
+    alarm_add(RTC_MSEC(msec), current_pid, ALARM_WAKEUP);
 
     sched_yield();
 
